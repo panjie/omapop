@@ -17,8 +17,9 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--capture-dir", type=Path)
     parser.add_argument("--ports", action="store_true", help="Test the port confirmation UI instead")
+    parser.add_argument("--results", action="store_true", help="Test Markdown result rendering instead")
     args = parser.parse_args()
-    fixture = Path(__file__).resolve().with_name("ports-ui.qml" if args.ports else "settings-ui.qml")
+    fixture = Path(__file__).resolve().with_name("results-ui.qml" if args.results else "ports-ui.qml" if args.ports else "settings-ui.qml")
     shell = Path(os.environ.get("OMARCHY_PATH", "/usr/share/omarchy")) / "shell"
     with tempfile.TemporaryDirectory(prefix="omapop-settings-test-") as directory:
         root = Path(directory)
@@ -54,13 +55,13 @@ ShellRoot {
             print('Offscreen UI test timed out')
             return 1
         print(result.stdout, end="")
-        marker = 'OMAPOP_PORT_TESTS' if args.ports else 'OMAPOP_SETTINGS_TESTS'
+        marker = 'OMAPOP_RESULT_TESTS' if args.results else 'OMAPOP_PORT_TESTS' if args.ports else 'OMAPOP_SETTINGS_TESTS'
         match = re.search(marker + r" (\{[^\n]+\})", result.stdout)
         summary = json.loads(match[1]) if match else {}
         captured = not args.capture_dir or all(
             (args.capture_dir / name).is_file() and (args.capture_dir / name).stat().st_size > 0
-            for name in (("confirmation.png",) if args.ports else ("selection.png", "advanced.png", "excluded-apps.png", "window-picker.png")))
-        return 0 if result.returncode == 0 and summary.get("failed") == 0 and summary.get("passed", 0) >= (4 if args.ports else 21) and captured else 1
+            for name in (("result.png",) if args.results else ("confirmation.png",) if args.ports else ("selection.png", "advanced.png", "excluded-apps.png", "window-picker.png")))
+        return 0 if result.returncode == 0 and summary.get("failed") == 0 and summary.get("passed", 0) >= (3 if args.results else 4 if args.ports else 21) and captured else 1
 
 
 if __name__ == "__main__":

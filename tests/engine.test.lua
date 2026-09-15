@@ -106,6 +106,23 @@ __omapop.arm(0, 0, 30, 30)
 dispatch_mouse("mouse_down", false)
 assert(events[#events] == "omapop|scroll")
 
+-- Scroll within the expanded card must reach QML without dismissing it.
+for _, held in ipairs({ 0, 1, 4 }) do
+  for _, key in ipairs({ "mouse_up", "mouse_down" }) do
+    mask, x, y = held, -400, 250
+    __omapop.arm(-500, 100, 600, 400)
+    local before = #events
+    dispatch_mouse(key, false)
+    assert(__omapop.armed and #events == before, "inside scrolling must keep the card open")
+    x = 101
+    dispatch_mouse(key, false)
+    assert(not __omapop.armed and #events == before + 1, "outside scrolling must dismiss")
+    assert(events[#events] == "omapop|scroll")
+    dispatch_mouse(key, false)
+    assert(#events == before + 1, "dismissed cards must not emit more scroll events")
+  end
+end
+
 -- A shell restart must not duplicate bindings or touch expired mouse handles.
 local installed = __omapop
 dofile(path)

@@ -79,7 +79,7 @@ reloads its configuration (`hyprctl reload`), or immediately with
   selection text for Copy, Search or text-processing actions.
   If you start dragging after the hold, releasing the button evaluates the new
   selection normally, including on read-only page text.
-- The bar hides when you click elsewhere, press a key, scroll, move the pointer
+- The bar hides when you click elsewhere, press a key, scroll outside the card, move the pointer
   away, or switch window or workspace. Hold **Super** while selecting to keep
   it away.
 - **Click the bar icon** to turn extensions on and off, edit their options,
@@ -324,6 +324,17 @@ Snippets are stored as a package folder under the extensions folder and start
 disabled. Review the code, then enable the installed entry. Editing it requires
 reviewing and enabling the new content again.
 
+### Result display
+
+`show-result` and `preview-result` display Markdown in a spacious, scrollable
+card, including headings, lists, tables and fenced code blocks. The display is
+limited to 131,072 characters; copying and pasting still use the original output.
+Both modes copy the output to the clipboard. Use **Close** to dismiss the card;
+`preview-result` also provides **Paste result** to insert the output into the
+original application. Clicking the body lets you read and scroll without pasting.
+In keyboard mode, Up/Down and Page Up/Page Down scroll, Enter applies the result
+(paste for previews, close otherwise), and Escape closes the card.
+
 ### Writing your own
 
 A package is a folder whose name ends in `.popclipext` with a config file at
@@ -561,6 +572,7 @@ node tests/http.test.mjs                            # request deadlines and stre
 node tests/runner-http.test.mjs                     # fetch, XHR and Axios through the restricted runner
 node tests/runner-modules.test.mjs                  # TypeScript, defaults and dynamic population
 python3 tests/check_settings_ui.py                   # controls in an isolated, offscreen Quickshell
+python3 tests/check_settings_ui.py --results         # Markdown result rendering and scrolling
 python3 tests/check_settings_ui.py --ports           # confirmation controls
 python3 tests/check_plugin_load.py                  # full plugin QML loading; requires a Wayland session, shows no windows
 python3 tests/check_context_ui.py                   # live GTK/AT-SPI check; opens a temporary window and selects fixture text

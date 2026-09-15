@@ -194,7 +194,9 @@ PanelWindow {
     }
 
     function showResult(text, preview) {
-        resultText = Actions.truncateResult(text)
+        resultText = String(text || "").slice(0, 131072)
+        primaryCenter = -1
+        resultContent.resetScroll()
         resultPreview = !!preview
         hoveredTitle = ""
         mode = "result"
@@ -247,6 +249,12 @@ PanelWindow {
                 if (!win.keyboardMode)
                     return
                 event.accepted = true
+                if (win.mode === "result" && (event.key === Qt.Key_Down || event.key === Qt.Key_Up || event.key === Qt.Key_PageDown || event.key === Qt.Key_PageUp)) {
+                    var direction = event.key === Qt.Key_Down || event.key === Qt.Key_PageDown ? 1 : -1
+                    var step = event.key === Qt.Key_PageDown || event.key === Qt.Key_PageUp ? resultContent.height * 0.85 : win.buttonSize
+                    resultContent.contentY = Math.max(0, Math.min(Math.max(0, resultContent.contentHeight - resultContent.height), resultContent.contentY + direction * step))
+                    return
+                }
                 if (event.key === Qt.Key_Left || (event.key === Qt.Key_Tab && (event.modifiers & Qt.ShiftModifier)) || event.key === Qt.Key_H)
                     win.moveHighlight(-1)
                 else if (event.key === Qt.Key_Right || event.key === Qt.Key_Tab || event.key === Qt.Key_L)
@@ -349,7 +357,7 @@ PanelWindow {
                 id: body
                 anchors.centerIn: parent
                 implicitWidth: buttonRow.visible ? buttonRow.implicitWidth : resultRow.visible ? resultRow.implicitWidth : statusItem.visible ? statusItem.implicitWidth : busyItem.visible ? busyItem.implicitWidth : confirmRow.implicitWidth
-                implicitHeight: confirmRow.visible ? confirmRow.implicitHeight : win.buttonSize
+                implicitHeight: confirmRow.visible ? confirmRow.implicitHeight : resultRow.visible ? resultRow.implicitHeight : win.buttonSize
 
                 Row {
                     id: buttonRow
@@ -376,45 +384,61 @@ PanelWindow {
                     }
                 }
 
-                // Result text (show-result / preview-result).
-                Item {
+                // Results keep their Markdown structure in a bounded reading card.
+                Column {
                     id: resultRow
                     visible: win.mode === "result"
-                    implicitWidth: Math.min(Math.round(win.screenW * 0.6), resultLabel.implicitWidth + Style.spacing.md * 2 + (win.resultPreview ? win.buttonSize : 0))
-                    height: win.buttonSize
-                    Text {
-                        id: resultLabel
-                        anchors.left: parent.left
-                        anchors.leftMargin: Style.spacing.md
-                        anchors.right: parent.right
-                        anchors.rightMargin: win.resultPreview ? win.buttonSize : Style.spacing.md
-                        anchors.verticalCenter: parent.verticalCenter
+                    width: Math.max(1, Math.min(Style.space(600), win.screenW - Style.spacing.md * 2))
+                    spacing: Style.spacing.sm
+                    Row {
+                        width: parent.width
+                        height: win.buttonSize
+                        Text {
+                            width: parent.width - closeResult.width
+                            leftPadding: Style.spacing.md
+                            anchors.verticalCenter: parent.verticalCenter
+                            text: win.resultPreview ? "Preview" : "Result"
+                            color: win.fg
+                            font.family: win.fontFamily
+                            font.pixelSize: Style.font.body
+                            font.bold: true
+                        }
+                        ActionButton {
+                            id: closeResult
+                            button: ({ title: "Close", showAs: "text", textLabel: "Close" })
+                            onActivated: win.keyDismiss()
+                        }
+                    }
+                    Rectangle {
+                        width: parent.width - Style.spacing.md * 2
+                        x: Style.spacing.md
+                        height: 1
+                        color: win.borderColor
+                    }
+                    ResultContent {
+                        id: resultContent
+                        width: parent.width
                         text: win.resultText
-                        textFormat: Text.PlainText
-                        elide: Text.ElideRight
-                        maximumLineCount: 1
-                        color: win.fg
-                        font.family: win.fontFamily
-                        font.pixelSize: Style.font.body
-                        renderType: Text.NativeRendering
+                        maxHeight: Math.max(win.buttonSize, Math.min(win.screenH * 0.55,
+                            win.screenH - win.labelHeight - win.nubSize * 2 - win.gapToPointer - win.buttonSize * 2 - Style.spacing.sm * 4 - Style.spacing.xs * 2))
                     }
-                    Text {
-                        visible: win.resultPreview
-                        anchors.right: parent.right
-                        anchors.rightMargin: Style.spacing.sm
-                        anchors.verticalCenter: parent.verticalCenter
-                        text: "\u{F0192}"
-                        textFormat: Text.PlainText
-                        color: win.fg
-                        font.family: win.fontFamily
-                        font.pixelSize: win.iconSize
-                        renderType: Text.NativeRendering
-                    }
-                    MouseArea {
-                        anchors.fill: parent
-                        hoverEnabled: true
-                        cursorShape: win.resultPreview ? Qt.PointingHandCursor : Qt.ArrowCursor
-                        onClicked: win.resultClicked()
+                    Row {
+                        x: Style.spacing.md
+                        height: win.buttonSize
+                        spacing: Style.spacing.md
+                        Text {
+                            anchors.verticalCenter: parent.verticalCenter
+                            text: win.resultPreview ? "Ready to paste" : "Result"
+                            color: win.fg
+                            opacity: 0.6
+                            font.family: win.fontFamily
+                            font.pixelSize: Style.font.caption
+                        }
+                        ActionButton {
+                            visible: win.resultPreview
+                            button: ({ title: "Paste result", showAs: "text", textLabel: "Paste result", accent: true })
+                            onActivated: win.resultClicked()
+                        }
                     }
                 }
 

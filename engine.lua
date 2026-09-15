@@ -1,4 +1,4 @@
-local ENGINE_VERSION = 5
+local ENGINE_VERSION = 6
 local BIND_KEYS = { "mouse:272", "mouse:273", "mouse:274", "mouse_up", "mouse_down" }
 
 local previous = rawget(_G, "__omapop")
@@ -254,9 +254,12 @@ bind("mouse:272", on_release, { release = true, non_consuming = true, descriptio
 bind("mouse:273", function() on_press(273) end, { non_consuming = true, description = "Omapop dismiss (right button)" })
 bind("mouse:274", function() on_press(274) end, { non_consuming = true, description = "Omapop dismiss (middle button)" })
 
--- Scrolling dismisses the bar. Only reported while armed.
+-- Let the popup receive scrolling within its card (results and confirmations).
+-- Scrolling the surrounding application still dismisses it.
 local function on_scroll()
   if not E.armed then return end
+  local x, y = cursor()
+  if inside_rect(x, y) then return end
   E.disarm()
   emit("scroll", {})
 end
