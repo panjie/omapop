@@ -183,6 +183,7 @@ Item {
     property bool paused: false
     property bool engineReady: false
     property string runtimeName: ""
+    property bool nodeSupportsAllowNet: false
     property bool runtimeProbed: false
     property string lastError: ""
     property var extensions: []
@@ -661,10 +662,12 @@ Item {
         } else if (kind === "shortcut") {
             trigger(parseContext(f, 1), "shortcut")
         } else if (kind === "key") {
+            if (popup.visible) log("POP_AI_UI_TRACE dismiss event=key")
             cancelSelection()
             if (popup.visible && !busy && !popup.keyboardMode)
                 hidePopup()
         } else if (kind === "far" || kind === "scroll") {
+            if (popup.visible) log("POP_AI_UI_TRACE dismiss event=" + kind)
             cancelSelection()
             if (popup.visible && !busy)
                 hidePopup()
@@ -676,7 +679,21 @@ Item {
             && Math.abs(x - lastReleaseInfo.x) < 8 && Math.abs(y - lastReleaseInfo.y) < 8
     }
 
+    // Compositor events can arrive with the rectangle from before a layout change.
+    // Check the current card too, so a click on an action cannot dismiss it first.
+    function popupContainsPoint(x, y) {
+        if (!popup.visible || !current || !current.ctx || !current.ctx.monitor)
+            return false
+        var r = popup.cardRect()
+        var mon = current.ctx.monitor
+        var left = mon.x + popup.margins.left + r.x
+        var top = mon.y + popup.margins.top + r.y
+        return x >= left && x <= left + r.w && y >= top && y <= top + r.h
+    }
+
     function onPress(x, y, button, mods, inside) {
+        inside = inside || popupContainsPoint(x, y)
+        if (popup.visible) log("POP_AI_UI_TRACE press inside=" + inside + " button=" + button + " updating=" + selectionUpdating)
         var continuing = button === 272 && !inside && (mods & 64) === 0 && !busy
             && popup.visible && popup.mode === "buttons" && !popup.keyboardMode
             && current && current.trigger === "selection" && isClickContinuation(x, y, Date.now())
@@ -700,6 +717,7 @@ Item {
     }
 
     function onRelease(ctx) {
+        ctx.pressInside = ctx.pressInside || popupContainsPoint(ctx.pressX, ctx.pressY)
         var now = Date.now()
         var dx = ctx.x - ctx.pressX
         var dy = ctx.y - ctx.pressY
@@ -1247,6 +1265,7 @@ Item {
         if (!popup.visible || !current)
             return
         var r = popup.cardRect()
+        log("POP_AI_UI_TRACE arm rect=" + r.x + "," + r.y + "," + r.w + "," + r.h)
         var mon = current.ctx.monitor
         var gx = Math.round(mon.x + popup.margins.left + r.x)
         var gy = Math.round(mon.y + popup.margins.top + r.y)
@@ -1260,6 +1279,7 @@ Item {
     }
 
     function hidePopup() {
+        log("POP_AI_UI_TRACE hide mode=" + popup.mode + " busy=" + busy)
         pendingConfirm = null
         cancelSelection()
         selectionUpdating = false
@@ -1286,6 +1306,7 @@ Item {
     }
 
     function showResult(text, preview) {
+        log("POP_AI_UI_TRACE showResult visible=" + popup.visible + " chars=" + String(text || "").length)
         if (!popup.visible)
             return
         popup.showResult(text, preview)
@@ -1309,6 +1330,7 @@ Item {
     }
 
     function handleClick(button, qtModifiers) {
+        log("POP_AI_UI_TRACE click hasCurrent=" + !!current + " busy=" + busy + " updating=" + selectionUpdating + " builtin=" + !!button.builtin)
         if (!current || busy || selectionUpdating)
             return
         var mods = clickModifiers(qtModifiers)
@@ -1631,13 +1653,16 @@ Item {
 
     function runExtensionAction(button, mods) {
         var session = current
+        log("POP_AI_UI_TRACE verify started")
         verifyExtension(button.ext, function (valid) {
+            log("POP_AI_UI_TRACE verify valid=" + valid + " sameSession=" + (current === session))
             if (valid && current === session)
                 runVerifiedExtensionAction(button, mods)
         })
     }
 
     function runVerifiedExtensionAction(button, mods) {
+        log("POP_AI_UI_TRACE action type=" + button.action.type + " after=" + button.action.after + " runtime=" + runtimeName)
         var action = button.action
         var type = action.type
         current.lastResult = ""
@@ -1704,6 +1729,7 @@ Item {
     }
 
     function applyAfter(button, result) {
+        log("POP_AI_UI_TRACE applyAfter mode=" + button.action.after + " visible=" + popup.visible)
         var after = button.action.after || ""
         var text = result === undefined || result === null ? "" : String(result)
         var context = current.context
@@ -1749,6 +1775,7 @@ Item {
     }
 
     function scriptFailed(message, openSettings) {
+        log("POP_AI_UI_TRACE scriptFailed hasCurrent=" + !!current + " settings=" + !!openSettings)
         if (!current)
             return
         current.failed = true
@@ -1834,7 +1861,8 @@ Item {
         }
         if (runtimeName === "node") {
             var nargv = ["/usr/bin/node", "--permission", "--allow-fs-read=" + extDir + "/*", "--allow-fs-read=" + pluginDir + "/bin/*"]
-            if (allowNetwork)
+            // Node 22 has no network permission flag; keep its other permissions.
+            if (allowNetwork && nodeSupportsAllowNet)
                 nargv.push("--allow-net")
             nargv.push(runnerPath)
             return nargv
@@ -1926,9 +1954,11 @@ Item {
         }, function (result) {
             busyTask = null
             if (!current || current !== session) {
+                log("POP_AI_UI_TRACE runner discarded: selection session closed")
                 busy = false
                 return
             }
+            log("POP_AI_UI_TRACE runner exit=" + result.code + " ok=" + result.ok + " done=" + finishedLine + " error=" + !!actionError + " timeout=" + result.timedOut + " chars=" + String(session.lastResult || "").length)
             if (actionError || effectOverflow || !finishedLine || !result.ok) {
                 busy = false
                 if (actionError) {
@@ -2576,9 +2606,12 @@ Item {
                 populateModules()
                 return
             }
-            spawn({ command: ["/usr/bin/node", "--version"], limit: 4096, deadline: 8000 }, function (nres) {
+            spawn({ command: ["/usr/bin/node", "--permission", "-e", "console.log(process.allowedNodeEnvironmentFlags.has('--allow-net'))"], limit: 4096, deadline: 8000 }, function (nres) {
                 runtimeProbed = true
                 if (nres.ok) {
+                    nodeSupportsAllowNet = String(nres.stdout || "").trim() === "true"
+                    if (!nodeSupportsAllowNet)
+                        log("Node runtime has no native network permission flag; extension networking uses runner entitlement checks")
                     runtimeName = "node"
                     populateModules()
                 } else {

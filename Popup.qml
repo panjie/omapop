@@ -108,6 +108,18 @@ PanelWindow {
     }
 
     // Bar rectangle in this window's coordinates, for the compositor-side hit test.
+    // Hover labels, primary-button alignment and result content can move/resize
+    // the card after present(). Resend its compositor hit region on each change.
+    readonly property var compositorHitRect: ({
+        x: margins.left + cardLeft,
+        y: margins.top + labelHeight + nubSize,
+        w: card.implicitWidth,
+        h: card.implicitHeight
+    })
+    onCompositorHitRectChanged: Qt.callLater(function () {
+        if (win.visible) win.geometryReady()
+    })
+
     function cardRect() {
         return { x: cardLeft, y: labelHeight + nubSize, w: card.implicitWidth, h: card.implicitHeight }
     }
