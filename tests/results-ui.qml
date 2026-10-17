@@ -16,16 +16,18 @@ TestCase {
         id: canvas
         width: 420
         height: result.height
-        color: Color.popups.background
+        color: Color.background
         Plugin.ResultContent { id: result; width: 420; maxHeight: 300 }
     }
     onCompletedChanged: if (completed) console.log("OMAPOP_RESULT_TESTS " + JSON.stringify({passed:qtest_results.passCount,failed:qtest_results.failCount}))
     function test_markdown_and_long_content() {
         result.text = "# Heading\n\n**Bold** and `code`\n\n" + "- List item\n".repeat(100)
         var document = result.contentItem.children[0]
-        compare(document.textFormat, TextEdit.MarkdownText)
+        compare(document.textFormat, TextEdit.RichText)
         verify(document.getText(0, document.length).indexOf("**Bold**") === -1)
         verify(document.getText(0, document.length).indexOf("Bold") >= 0)
+        verify(result.richText.indexOf("font-size:") >= 0)
+        verify(result.richText.indexOf("color:") >= 0)
         tryVerify(() => result.contentHeight > result.height)
         compare(result.height, 300)
         var captureDir = Quickshell.env("OMAPOP_SETTINGS_CAPTURE_DIR")
@@ -44,5 +46,13 @@ TestCase {
         tryVerify(() => document.contentHeight > 0)
         verify(document.getText(0, document.length).indexOf("Answer") >= 0)
         verify(document.getText(0, document.length).indexOf("const answer = 42;") >= 0)
+    }
+    function test_raw_html_and_bad_links_stay_text() {
+        result.text = "<script>alert(1)</script> [bad](javascript:alert(1))"
+        var document = result.contentItem.children[0]
+        verify(document.getText(0, document.length).indexOf("<script>alert(1)</script>") >= 0)
+        verify(result.richText.indexOf("&lt;script&gt;") >= 0)
+        verify(result.richText.indexOf("javascript:") === -1)
+        verify(result.richText.indexOf("bad") >= 0)
     }
 }

@@ -42,6 +42,7 @@ PanelWindow {
 
     signal buttonClicked(var button, int qtModifiers)
     signal resultClicked()
+    signal resultCopied()
     signal confirmAccepted()
     signal confirmRejected()
     signal busyCancelled()
@@ -402,31 +403,6 @@ PanelWindow {
                     visible: win.mode === "result"
                     width: Math.max(1, Math.min(Style.space(600), win.screenW - Style.spacing.md * 2))
                     spacing: Style.spacing.sm
-                    Row {
-                        width: parent.width
-                        height: win.buttonSize
-                        Text {
-                            width: parent.width - closeResult.width
-                            leftPadding: Style.spacing.md
-                            anchors.verticalCenter: parent.verticalCenter
-                            text: win.resultPreview ? "Preview" : "Result"
-                            color: win.fg
-                            font.family: win.fontFamily
-                            font.pixelSize: Style.font.body
-                            font.bold: true
-                        }
-                        ActionButton {
-                            id: closeResult
-                            button: ({ title: "Close", showAs: "text", textLabel: "Close" })
-                            onActivated: win.keyDismiss()
-                        }
-                    }
-                    Rectangle {
-                        width: parent.width - Style.spacing.md * 2
-                        x: Style.spacing.md
-                        height: 1
-                        color: win.borderColor
-                    }
                     ResultContent {
                         id: resultContent
                         width: parent.width
@@ -434,22 +410,22 @@ PanelWindow {
                         maxHeight: Math.max(win.buttonSize, Math.min(win.screenH * 0.55,
                             win.screenH - win.labelHeight - win.nubSize * 2 - win.gapToPointer - win.buttonSize * 2 - Style.spacing.sm * 4 - Style.spacing.xs * 2))
                     }
-                    Row {
-                        x: Style.spacing.md
+                    Item {
+                        width: parent.width
                         height: win.buttonSize
-                        spacing: Style.spacing.md
-                        Text {
-                            anchors.verticalCenter: parent.verticalCenter
-                            text: win.resultPreview ? "Ready to paste" : "Result"
-                            color: win.fg
-                            opacity: 0.6
-                            font.family: win.fontFamily
-                            font.pixelSize: Style.font.caption
-                        }
-                        ActionButton {
-                            visible: win.resultPreview
-                            button: ({ title: "Paste result", showAs: "text", textLabel: "Paste result", accent: true })
-                            onActivated: win.resultClicked()
+                        Row {
+                            anchors.centerIn: parent
+                            height: win.buttonSize
+                            spacing: Style.spacing.xs
+                            ActionButton {
+                                button: ({ title: "Copy & close", showAs: "text", textLabel: "Copy & close", accent: !win.resultPreview })
+                                onActivated: win.resultCopied()
+                            }
+                            ActionButton {
+                                visible: win.resultPreview
+                                button: ({ title: "Paste result", showAs: "text", textLabel: "Paste result", accent: true })
+                                onActivated: win.resultClicked()
+                            }
                         }
                     }
                 }

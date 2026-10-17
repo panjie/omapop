@@ -327,9 +327,12 @@ reviewing and enabling the new content again.
 ### Result display
 
 `show-result` and `preview-result` display Markdown in a spacious, scrollable
-card, including headings, lists, tables and fenced code blocks. The display is
+card, including headings, lists, tables and fenced code blocks. The card follows
+the active theme: accented headings, code surfaces, quote bars and bordered
+tables keep long results close to a terminal Markdown reader. The display is
 limited to 131,072 characters; copying and pasting still use the original output.
-Both modes copy the output to the clipboard. Use **Close** to dismiss the card;
+Both modes copy the output to the clipboard. Press Escape or click away to dismiss
+the card; **Copy & close** copies the result again and dismisses the card, and
 `preview-result` also provides **Paste result** to insert the output into the
 original application. Clicking the body lets you read and scroll without pasting.
 In keyboard mode, Up/Down and Page Up/Page Down scroll, Enter applies the result

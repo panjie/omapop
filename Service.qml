@@ -1241,6 +1241,7 @@ Item {
         onGeometryReady: root.armEngine()
         onButtonClicked: function (button, qtModifiers) { root.handleClick(button, qtModifiers) }
         onResultClicked: root.handleResultClick()
+        onResultCopied: root.handleResultCopy()
         onConfirmAccepted: root.handleConfirm(true)
         onConfirmRejected: root.handleConfirm(false)
         onBusyCancelled: root.cancelBusy()
@@ -1353,6 +1354,20 @@ Item {
         }
         var text = current.lastResult || ""
         pasteText(text, false, function () { hidePopup() })
+    }
+
+    function handleResultCopy() {
+        if (!current)
+            return
+        var session = current
+        copyText(current.lastResult || "", function (ok) {
+            if (current !== session || !popup.visible)
+                return
+            if (ok)
+                hidePopup()
+            else
+                showStatus(false)
+        })
     }
 
     property var pendingConfirm: null
