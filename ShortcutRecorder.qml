@@ -1,4 +1,4 @@
-import QtQuick
+import QtQuick 6.11 // omacvm #376: QtQuick's own Color (Qt 6.12) would hide Omarchy's
 import QtQuick.Layouts
 import QtQuick.Window
 import Quickshell
