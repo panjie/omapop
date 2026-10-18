@@ -19,7 +19,7 @@ Column {
         wrapMode: Text.WordWrap
         color: root.foreground
         font.family: root.fontFamily
-        font.pixelSize: Style.font.body
+        font.pixelSize: Style.font.bodySmall
         renderType: Text.NativeRendering
     }
     Flickable {
@@ -43,7 +43,7 @@ Column {
             wrapMode: Text.WrapAnywhere
             color: root.foreground
             font.family: "monospace"
-            font.pixelSize: Style.font.body
+            font.pixelSize: Style.font.bodySmall
             renderType: Text.NativeRendering
         }
     }

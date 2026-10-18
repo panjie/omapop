@@ -102,6 +102,6 @@ ColumnLayout {
         wrapMode: Text.WordWrap
         color: root.editable ? root.secondaryText : Color.urgent
         font.family: Style.font.family
-        font.pixelSize: Style.font.caption
+        font.pixelSize: Math.max(1, Style.font.caption - 1)
     }
 }

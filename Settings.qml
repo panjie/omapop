@@ -168,7 +168,7 @@ ColumnLayout {
         wrapMode: Text.WordWrap
         color: root.errorText ? Color.urgent : root.secondaryText
         font.family: Style.font.family
-        font.pixelSize: Style.font.caption
+        font.pixelSize: Math.max(1, Style.font.caption - 1)
     }
 
     component SettingRow: ColumnLayout {
@@ -232,7 +232,7 @@ ColumnLayout {
             wrapMode: Text.WordWrap
             color: root.secondaryText
             font.family: Style.font.family
-            font.pixelSize: Style.font.caption
+            font.pixelSize: Math.max(1, Style.font.caption - 1)
         }
 
         Dropdown {

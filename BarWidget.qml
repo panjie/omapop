@@ -67,7 +67,7 @@ Panel {
             textFormat: Text.PlainText
             color: Color.popups.text
             font.family: root.fontFamily
-            font.pixelSize: Style.font.title
+            font.pixelSize: Style.font.subtitle
             font.weight: Font.DemiBold
         }
         Rectangle {
@@ -83,7 +83,7 @@ Panel {
                 textFormat: Text.PlainText
                 color: root.secondaryText
                 font.family: root.fontFamily
-                font.pixelSize: Style.font.caption
+                font.pixelSize: Math.max(1, Style.font.caption - 1)
             }
         }
     }
@@ -168,7 +168,7 @@ Panel {
                     textFormat: Text.PlainText
                     color: Color.popups.text
                     font.family: root.fontFamily
-                    font.pixelSize: Math.round(Style.font.heading * 1.25)
+                    font.pixelSize: Math.round(Style.font.heading * 1.125)
                     font.weight: Font.DemiBold
                 }
                 Button {
@@ -204,7 +204,7 @@ Panel {
                 wrapMode: Text.WordWrap
                 color: Color.urgent
                 font.family: root.fontFamily
-                font.pixelSize: Style.font.caption
+                font.pixelSize: Math.max(1, Style.font.caption - 1)
             }
 
             // Only the broken case earns a place up here, and it is a warning:
@@ -218,7 +218,7 @@ Panel {
                 wrapMode: Text.WordWrap
                 color: Color.urgent
                 font.family: root.fontFamily
-                font.pixelSize: Style.font.caption
+                font.pixelSize: Math.max(1, Style.font.caption - 1)
             }
 
             SectionHeading {
@@ -234,7 +234,7 @@ Panel {
                 wrapMode: Text.WordWrap
                 color: root.secondaryText
                 font.family: root.fontFamily
-                font.pixelSize: Style.font.caption
+                font.pixelSize: Math.max(1, Style.font.caption - 1)
             }
 
             ListView {
@@ -287,7 +287,7 @@ Panel {
                                 // Unusable here (every action needs macOS): present, but dimmed.
                                 color: modelData.usable === false ? root.secondaryText : Color.popups.text
                                 font.family: root.fontFamily
-                                font.pixelSize: Style.font.body
+                                font.pixelSize: Style.font.bodySmall
                                 font.weight: Font.DemiBold
                             }
                             Text {
@@ -308,7 +308,7 @@ Panel {
                                 wrapMode: Text.WordWrap
                                 color: modelData.error ? Color.urgent : root.secondaryText
                                 font.family: root.fontFamily
-                                font.pixelSize: Style.font.caption
+                                font.pixelSize: Math.max(1, Style.font.caption - 1)
                             }
                         }
 
@@ -352,7 +352,7 @@ Panel {
                             wrapMode: Text.WordWrap
                             color: root.secondaryText
                             font.family: root.fontFamily
-                            font.pixelSize: Style.font.caption
+                            font.pixelSize: Math.max(1, Style.font.caption - 1)
                         }
 
                         Repeater {
@@ -385,7 +385,7 @@ Panel {
                                     wrapMode: Text.WordWrap
                 color: root.secondaryText
                                     font.family: root.fontFamily
-                                    font.pixelSize: Style.font.caption
+                                    font.pixelSize: Math.max(1, Style.font.caption - 1)
                                 }
 
                                 ToggleSwitch {
@@ -493,7 +493,7 @@ Panel {
                     wrapMode: Text.WordWrap
                 color: root.secondaryText
                     font.family: root.fontFamily
-                    font.pixelSize: Style.font.caption
+                    font.pixelSize: Math.max(1, Style.font.caption - 1)
                 }
 
                 // Extensions whose every action is AppleScript or a macOS
@@ -551,7 +551,7 @@ Panel {
                                 wrapMode: Text.WordWrap
                                 color: modelData.needsMac ? root.secondaryText : Color.popups.text
                                 font.family: root.fontFamily
-                                font.pixelSize: Style.font.body
+                                font.pixelSize: Style.font.bodySmall
                                 font.weight: Font.DemiBold
                             }
                             Text {
@@ -563,7 +563,7 @@ Panel {
                                 wrapMode: Text.WordWrap
                 color: root.secondaryText
                                 font.family: root.fontFamily
-                                font.pixelSize: Style.font.caption
+                                font.pixelSize: Math.max(1, Style.font.caption - 1)
                             }
                         }
 
@@ -628,7 +628,7 @@ Panel {
                 wrapMode: Text.WordWrap
                 color: Qt.darker(Color.popups.text, 1.6)
                 font.family: root.fontFamily
-                font.pixelSize: Style.font.caption
+                font.pixelSize: Math.max(1, Style.font.caption - 1)
             }
         }
 

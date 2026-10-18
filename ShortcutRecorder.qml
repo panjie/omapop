@@ -199,6 +199,6 @@ ColumnLayout {
         wrapMode: Text.WordWrap
         color: root.hint ? Color.urgent : root.secondaryText
         font.family: Style.font.family
-        font.pixelSize: Style.font.caption
+        font.pixelSize: Math.max(1, Style.font.caption - 1)
     }
 }

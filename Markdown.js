@@ -353,11 +353,8 @@ function toHtml(source, p) {
 }
 
 function headingHtml(level, text, p, base, gap) {
-    var size = level === 1 ? Math.round(base * 1.6)
-        : level === 2 ? Math.round(base * 1.35)
-        : level === 3 ? Math.round(base * 1.15)
-        : base + 1
-    var top = level === 1 ? Math.round(base * 1.3) : level === 2 ? Math.round(base * 1.1) : Math.round(base * 0.8)
+    var size = level === 1 ? base + 1 : level === 2 ? base : base > 1 ? base - 1 : base + 1
+    var top = level === 1 ? Math.round(base * 1.2) : level === 2 ? Math.round(base * 1.05) : Math.round(base * 0.9)
     var bottom = Math.round(base * 0.35)
     var color = level <= 3 ? p.heading : p.text
     return "<h" + level + " style=\"color:" + color + ";font-size:" + size + "px;margin-top:"

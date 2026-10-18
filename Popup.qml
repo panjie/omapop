@@ -335,7 +335,7 @@ PanelWindow {
                 maximumLineCount: 1
                 color: Color.tooltip.text
                 font.family: win.fontFamily
-                font.pixelSize: Style.font.caption
+                font.pixelSize: Math.max(1, Style.font.caption - 1)
                 renderType: Text.NativeRendering
             }
         }
@@ -538,7 +538,7 @@ PanelWindow {
             textFormat: Text.PlainText
             color: ab.button && ab.button.accent ? Color.accent : win.fg
             font.family: win.fontFamily
-            font.pixelSize: Style.font.body
+            font.pixelSize: Style.font.bodySmall
             font.bold: !!(ab.button && ab.button.accent)
             renderType: Text.NativeRendering
         }

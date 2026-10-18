@@ -8,7 +8,7 @@ Flickable {
     id: root
     property string text: ""
     property real maxHeight: 400
-    readonly property int baseSize: Style.font.title
+    readonly property int baseSize: Style.font.bodySmall
     readonly property int padding: Style.spacing.xxl
     readonly property color cardBg: root.popupBackground()
     readonly property var palette: ({
