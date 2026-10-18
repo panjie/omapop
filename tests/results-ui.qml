@@ -26,7 +26,11 @@ TestCase {
         compare(document.textFormat, TextEdit.RichText)
         verify(document.getText(0, document.length).indexOf("**Bold**") === -1)
         verify(document.getText(0, document.length).indexOf("Bold") >= 0)
-        verify(result.richText.indexOf("font-size:") >= 0)
+        // Headings must keep the body size: no font-size in the markup (Qt treats it
+        // as relative and scales <hN> on top), so level comes from weight and colour.
+        verify(result.richText.indexOf("<h1") === -1)
+        verify(result.richText.indexOf("font-weight:bold") >= 0)
+        compare(document.font.pixelSize, result.baseSize)
         verify(result.richText.indexOf("color:") >= 0)
         tryVerify(() => result.contentHeight > result.height)
         compare(result.height, 300)

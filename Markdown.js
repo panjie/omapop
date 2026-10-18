@@ -353,10 +353,12 @@ function toHtml(source, p) {
 }
 
 function headingHtml(level, text, p, base, gap) {
-    var size = level === 1 ? base + 1 : level === 2 ? base : base > 1 ? base - 1 : base + 1
+    // Headings keep the body size: Qt reads a CSS font-size in rich text as a
+    // relative value and scales <hN> again on top of it, so the only reliable
+    // way to match the body is a plain <p>; levels differ by weight and colour.
     var top = level === 1 ? Math.round(base * 1.2) : level === 2 ? Math.round(base * 1.05) : Math.round(base * 0.9)
     var bottom = Math.round(base * 0.35)
     var color = level <= 3 ? p.heading : p.text
-    return "<h" + level + " style=\"color:" + color + ";font-size:" + size + "px;margin-top:"
-        + (top - gap) + "px;margin-bottom:" + bottom + "px\">" + text + "</h" + level + ">"
+    return "<p style=\"color:" + color + ";font-weight:bold;margin-top:"
+        + (top - gap) + "px;margin-bottom:" + bottom + "px\">" + text + "</p>"
 }
