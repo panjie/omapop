@@ -92,7 +92,7 @@ test("saving a preference preserves current and unknown settings", () => {
 
 test("booleans, numbers, enums, and empty strings keep their JSON types", () => {
   const { c, writes } = harness();
-  for (const [key, value] of [["longPress", false], ["dragThreshold", 12], ["position", "below"], ["shortcut", ""]]) {
+  for (const [key, value] of [["aiEnabled", false], ["aiEnabled", true], ["longPress", false], ["dragThreshold", 12], ["position", "below"], ["shortcut", ""]]) {
     assert.equal(c.setSetting(key, value), "");
     assert.equal(writes.at(-1)[key], value);
   }

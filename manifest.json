@@ -39,6 +39,7 @@
       "commandKey": "ctrl",
       "shortcut": "",
       "showBarIcon": true,
+      "aiEnabled": true,
       "position": "auto",
       "assumeEditable": false,
       "accessibilityProbe": true,
@@ -46,6 +47,13 @@
       "extensionDownloads": false
     },
     "schema": [
+      {
+        "key": "aiEnabled",
+        "type": "boolean",
+        "label": "Enable AI text processing",
+        "defaultValue": true,
+        "description": "Show built-in AI actions for selected text. Managed in the installed extensions list."
+      },
       {
         "key": "searchEngine",
         "type": "enum",

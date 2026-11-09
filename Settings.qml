@@ -63,7 +63,6 @@ ColumnLayout {
     }
 
     signal backRequested()
-    signal aiSettingsRequested()
     signal flushEdits()
 
     spacing: Style.spacing.lg
@@ -135,17 +134,6 @@ ColumnLayout {
             font.pixelSize: Style.font.heading
             font.weight: Font.DemiBold
         }
-    }
-
-    Button {
-        objectName: "aiSettingsButton"
-        text: strings.t("settings.aiButton")
-        Layout.fillWidth: true
-        bordered: true
-        focusable: true
-        leftAlign: true
-        tooltipText: strings.t("settings.aiTooltip")
-        onClicked: { root.finishEditing(); root.aiSettingsRequested() }
     }
 
     Flickable {

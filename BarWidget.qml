@@ -24,7 +24,12 @@ Panel {
     readonly property var service: bar && bar.shell && typeof bar.shell.serviceFor === "function" ? bar.shell.serviceFor(pluginId) : null
     readonly property bool paused: service ? service.paused : false
     readonly property bool engineReady: service ? service.engineReady : false
-    readonly property var extensions: service ? service.extensions : []
+    // AI is built in, but belongs beside installed extensions in the manager.
+    readonly property var extensions: [{
+        identifier: "omapop.builtin.ai", builtinAi: true,
+        enabled: service ? service.setting("aiEnabled", true) !== false : true,
+        name: strings.t("ai.title"), description: strings.t("settings.aiTooltip"), icon: "AI"
+    }].concat(service ? service.extensions : [])
     readonly property string fontFamily: bar ? bar.fontFamily : Style.font.family
     readonly property color secondaryText: Qt.rgba(Commons.Color.popups.text.r, Commons.Color.popups.text.g, Commons.Color.popups.text.b, Commons.Color.popups.text.a * 0.68)
     readonly property bool showIcon: service ? service.setting("showBarIcon", true) !== false : setting("showBarIcon", true) !== false
@@ -50,7 +55,7 @@ Panel {
     Connections {
         target: root.service
         function onSettingsRequested() { root.aiOpen = false; root.settingsOpen = true }
-        function onAiSettingsRequested() { root.aiOpen = true; root.settingsOpen = true }
+        function onAiSettingsRequested() { root.settingsOpen = false; root.aiOpen = true }
     }
 
     component RowSeparator: Rectangle {
@@ -158,7 +163,7 @@ Panel {
         ColumnLayout {
             id: content
             anchors.fill: parent
-            visible: !root.settingsOpen
+            visible: !root.settingsOpen && !root.aiOpen
             spacing: Style.space(6)
 
             RowLayout {
@@ -327,14 +332,23 @@ Panel {
                             visible: true
                             iconText: root.expandedId === modelData.identifier ? "\u{F0143}" : "\u{F0493}"
                             tooltipText: strings.t("common.settings")
-                            onClicked: root.expandedId = root.expandedId === modelData.identifier ? "" : modelData.identifier
+                            onClicked: {
+                                if (modelData.builtinAi) root.aiOpen = true
+                                else root.expandedId = root.expandedId === modelData.identifier ? "" : modelData.identifier
+                            }
                         }
 
                         ToggleSwitch {
                             Layout.alignment: Qt.AlignVCenter
-                            interactive: !modelData.error && modelData.usable !== false
+                            interactive: !!root.service && !modelData.error && modelData.usable !== false
                             checked: !!modelData.enabled
-                            onToggled: if (root.service) root.service.setExtensionEnabled(modelData.identifier, !modelData.enabled)
+                            onToggled: {
+                                if (!root.service) return
+                                if (modelData.builtinAi) {
+                                    var error = root.service.setSetting("aiEnabled", !modelData.enabled)
+                                    if (error) root.service.lastError = error
+                                } else root.service.setExtensionEnabled(modelData.identifier, !modelData.enabled)
+                            }
                         }
                     }
 
@@ -647,7 +661,6 @@ Panel {
             anchors.fill: parent
             visible: root.settingsOpen && !root.aiOpen
             service: root.service
-            onAiSettingsRequested: root.aiOpen = true
             onBackRequested: {
                 root.settingsOpen = false
                 if (root.service) root.service.searchDirectory(root.service.directoryQuery)
@@ -658,7 +671,10 @@ Panel {
             anchors.fill: parent
             visible: root.opened && root.aiOpen
             ai: root.service ? root.service.ai : null
-            onBackRequested: root.aiOpen = false
+            onBackRequested: {
+                root.aiOpen = false
+                if (root.service) root.service.searchDirectory(root.service.directoryQuery)
+            }
         }
     }
 }

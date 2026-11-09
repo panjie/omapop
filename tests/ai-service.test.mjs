@@ -12,6 +12,7 @@ function harness() {
   const host = {
     pluginDir: '/plugin', configDir: '/private', selectionHelper: '/selection.py', selectionSerial: 3,
     busy: false, current: {input:{text:'original'}, context:{canReplace:true, terminal:false, windowAddress:'0x123'}, ctx:{}},
+    settings: {}, setting(key, fallback) { return this.settings[key] ?? fallback; },
     parseJson: JSON.parse, beginAiResult(){}, updateAiResult(){},
     spawn(spec, done) {
       const buffer = output.create(spec.limit || 65536, spec.lineMode === true);
@@ -93,4 +94,19 @@ test('provider error reaches the UI instead of the generic incomplete message',(
   h.calls[0].chunk('{"type":"error","message":"HTTP 401：API Key 无效。"}\n');
   h.calls[0].done({ok:false});
   assert.equal(h.c.status,'HTTP 401：API Key 无效。');
+});
+
+test('AI switch hides setup, toolbar and menu actions and blocks stale actions',()=>{
+  const h=harness();
+  h.c.config.buttons = [{...action, enabled:true, placement:'toolbar'}, {...action, id:'menu', enabled:true, placement:'menu'}];
+  assert.equal(h.c.buttons({text:'selected'}).length,2);
+  h.host.settings.aiEnabled = false;
+  assert.equal(h.c.buttons({text:'selected'}).length,0);
+  h.c.run(action);
+  assert.equal(h.calls.length,0);
+  h.c.config.connections = [];
+  assert.equal(h.c.buttons({text:'selected'}).length,0);
+  h.host.settings.aiEnabled = true;
+  assert.equal(h.c.buttons({text:'selected'})[0].aiSetup,true);
+  assert.equal(h.c.config.buttons.length,2);
 });

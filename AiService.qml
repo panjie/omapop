@@ -41,7 +41,7 @@ Item {
     function importPopai() { settingsAction("import", null) }
     function openSettings() { host.openAiSettings() }
     function buttons(input) {
-        if (!input.text || !input.text.trim()) return []
+        if (host.setting("aiEnabled", true) === false || !input.text || !input.text.trim()) return []
         if (!config.connections.length) return [{id: "ai.setup", title: strings.t("ai.setupButtonTitle"), textLabel: "AI", showAs: "text", aiSetup: true}]
         var direct = [], menu = []
         config.buttons.forEach(function(b) {
@@ -63,6 +63,7 @@ Item {
         else { status = strings.t("ai.status.stopped"); host.updateAiResult() }
     }
     function run(action) {
+        if (host.setting("aiEnabled", true) === false) return
         cancel(true)
         session = host.current
         if (!session) return

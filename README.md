@@ -264,8 +264,9 @@ the screen width spill into a "More" page.
 
 AI text processing is part of Omapop and needs only the existing Python 3
 runtime, without a separate extension, Node/Deno or an AI SDK. Open
-**Settings → Configure AI providers and prompts** (or click **Configure AI**
-after selecting text).
+**Installed extensions → AI text processing → gear icon** (or click **Configure AI**
+after selecting text). Use the switch beside AI text processing to enable or
+disable its selection actions without removing your providers or prompts.
 
 1. Add a connection, choose DeepSeek, OpenAI, Claude, Gemini or a compatible
    API, and enter its model ID and API key. DeepSeek starts with
