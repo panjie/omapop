@@ -120,7 +120,10 @@ Panel {
         bar: root.bar
         iconComponent: Component {
             BarIcon {
-                anchors.fill: parent
+                // Omarchy 4.5 measures this component inside a zero-sized Loader.
+                // Filling that loader collapses the icon; declare its canvas instead.
+                width: button.opticalSize
+                height: button.opticalSize
                 color: button.foreground
                 paused: root.paused
             }

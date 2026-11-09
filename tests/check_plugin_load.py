@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Check the real plugin QML with Quickshell's Wayland backend.
+"""Check the real plugin QML and bar icon with Quickshell's Wayland backend.
 
 Offscreen Quickshell has no PanelWindow backend, so control-only tests cannot
 catch every popup load failure. This check needs a Wayland session but shows no
@@ -32,6 +32,26 @@ def main():
         config.write_text('''import QtQuick
 import Quickshell
 ShellRoot {
+    id: root
+    property var barWidget: null
+
+    function findIconButton(item) {
+        if (!item) return null
+        if (item.componentSourceBounds !== undefined) return item
+        for (var i = 0; i < item.children.length; i++) {
+            var found = findIconButton(item.children[i])
+            if (found) return found
+        }
+        return null
+    }
+
+    function finish(passed, failures, barIconPainted) {
+        console.log("OMAPOP_LOAD_TESTS " + JSON.stringify({
+            passed: passed, failures: failures, barIconPainted: barIconPainted
+        }))
+        Qt.quit()
+    }
+
     Component.onCompleted: Qt.callLater(checkComponents)
     function checkComponents() {
         var files = %s
@@ -43,8 +63,30 @@ ShellRoot {
             else failures.push(component.errorString() || (files[i] + ": load did not complete"))
             component.destroy()
         }
-        console.log("OMAPOP_LOAD_TESTS " + JSON.stringify({passed: passed, failures: failures}))
-        Qt.quit()
+        if (failures.length > 0) {
+            finish(passed, failures, false)
+            return
+        }
+        var widgetComponent = Qt.createComponent(files[2])
+        barWidget = widgetComponent.createObject(root)
+        widgetComponent.destroy()
+        if (!barWidget) finish(passed, ["BarWidget.qml: could not create an instance"], false)
+        else iconTimer.start()
+    }
+
+    Timer {
+        id: iconTimer
+        interval: 50
+        repeat: true
+        property int attempts: 0
+        onTriggered: {
+            var button = root.findIconButton(root.barWidget)
+            var painted = button && button.componentSourceBounds.width > 0
+                && button.componentSourceBounds.height > 0
+                && button.componentPaintedWidth > 0 && button.componentPaintedHeight > 0
+            if (!painted && ++attempts < 20) return
+            finish(3, painted ? [] : ["Bar icon has no painted bounds"], painted)
+        }
     }
 }
 ''' % json.dumps(files))
@@ -60,7 +102,7 @@ ShellRoot {
         print(result.stdout, end='')
         match = re.search(r'OMAPOP_LOAD_TESTS (\{[^\n]+\})', result.stdout)
         report = json.loads(match[1]) if match else {}
-        return 0 if result.returncode == 0 and report.get('passed') == len(files) and report.get('failures') == [] else 1
+        return 0 if result.returncode == 0 and report.get('passed') == len(files) and report.get('failures') == [] and report.get('barIconPainted') else 1
 
 
 if __name__ == '__main__':
