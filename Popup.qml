@@ -3,6 +3,7 @@ import Quickshell
 import Quickshell.Wayland
 import QtQuick.Shapes
 import qs.Commons
+import qs.Commons as Commons
 import "Actions.js" as Actions
 
 // The action bar. A layer-shell surface that never takes keyboard focus, placed
@@ -21,6 +22,14 @@ PanelWindow {
     property string mode: "buttons"
     property string resultText: ""
     property bool resultPreview: false
+    property bool aiMode: false
+    property bool aiRunning: false
+    property bool aiCanReplace: false
+    property string aiStatus: ""
+    signal aiCopy()
+    signal aiReplace()
+    signal aiRetry()
+    signal aiStop()
     property bool statusOk: true
     property string confirmText: ""
     property string confirmDetails: ""
@@ -50,10 +59,10 @@ PanelWindow {
     signal keyActivate(int index)
     signal keyDismiss()
 
-    readonly property color bg: Color.popups.background
-    readonly property color fg: Color.popups.text
-    readonly property color borderColor: Color.popups.border
-    readonly property color hoverFill: Style.hoverFillFor(Color.popups.text, Color.accent, Color.urgent)
+    readonly property color bg: Commons.Color.popups.background
+    readonly property color fg: Commons.Color.popups.text
+    readonly property color borderColor: Commons.Color.popups.border
+    readonly property color hoverFill: Style.hoverFillFor(Commons.Color.popups.text, Commons.Color.accent, Commons.Color.urgent)
     readonly property int radius: Style.cornerRadius > 0 ? Math.min(Style.cornerRadius, Math.round(buttonSize / 2)) : Math.round(Style.space(8))
     readonly property int screenW: screen ? screen.width : 0
     readonly property int screenH: screen ? screen.height : 0
@@ -323,8 +332,8 @@ PanelWindow {
             width: implicitWidth
             height: implicitHeight
             radius: Math.round(height / 2)
-            color: Color.tooltip.background
-            border.color: Color.tooltip.border
+            color: Commons.Color.tooltip.background
+            border.color: Commons.Color.tooltip.border
             border.width: 1
             Text {
                 id: labelText
@@ -333,7 +342,7 @@ PanelWindow {
                 textFormat: Text.PlainText
                 elide: Text.ElideRight
                 maximumLineCount: 1
-                color: Color.tooltip.text
+                color: Commons.Color.tooltip.text
                 font.family: win.fontFamily
                 font.pixelSize: Math.max(1, Style.font.caption - 1)
                 renderType: Text.NativeRendering
@@ -403,8 +412,19 @@ PanelWindow {
                     visible: win.mode === "result"
                     width: Math.max(1, Math.min(Style.space(600), win.screenW - Style.spacing.md * 2))
                     spacing: Style.spacing.sm
+                    Text {
+                        visible: win.aiMode
+                        width: parent.width
+                        text: win.aiStatus
+                        textFormat: Text.PlainText
+                        wrapMode: Text.Wrap
+                        color: win.fg
+                        font.family: win.fontFamily
+                        font.pixelSize: Style.font.bodySmall
+                    }
                     ResultContent {
                         id: resultContent
+                        streaming: win.aiMode
                         width: parent.width
                         text: win.resultText
                         maxHeight: Math.max(win.buttonSize, Math.min(win.screenH * 0.55,
@@ -418,11 +438,32 @@ PanelWindow {
                             height: win.buttonSize
                             spacing: Style.spacing.xs
                             ActionButton {
+                                visible: win.aiMode
+                                button: ({title: "复制", showAs: "text", textLabel: "复制"})
+                                onActivated: win.aiCopy()
+                            }
+                            ActionButton {
+                                visible: win.aiMode && win.aiCanReplace
+                                button: ({title: "替换", showAs: "text", textLabel: "替换"})
+                                onActivated: win.aiReplace()
+                            }
+                            ActionButton {
+                                visible: win.aiMode
+                                button: ({title: win.aiRunning ? "停止" : "重新生成", showAs: "text", textLabel: win.aiRunning ? "停止" : "重试"})
+                                onActivated: { if (win.aiRunning) win.aiStop(); else win.aiRetry() }
+                            }
+                            ActionButton {
+                                visible: win.aiMode
+                                button: ({title: "关闭", showAs: "text", textLabel: "关闭"})
+                                onActivated: win.keyDismiss()
+                            }
+                            ActionButton {
+                                visible: !win.aiMode
                                 button: ({ title: "Copy & close", showAs: "text", textLabel: "Copy & close", accent: !win.resultPreview })
                                 onActivated: win.resultCopied()
                             }
                             ActionButton {
-                                visible: win.resultPreview
+                                visible: win.resultPreview && !win.aiMode
                                 button: ({ title: "Paste result", showAs: "text", textLabel: "Paste result", accent: true })
                                 onActivated: win.resultClicked()
                             }
@@ -440,7 +481,7 @@ PanelWindow {
                         anchors.centerIn: parent
                         text: win.statusOk ? "\u{F012C}" : "\u{F0156}"
                         textFormat: Text.PlainText
-                        color: win.statusOk ? win.fg : Color.urgent
+                        color: win.statusOk ? win.fg : Commons.Color.urgent
                         font.family: win.fontFamily
                         font.pixelSize: win.iconSize
                         renderType: Text.NativeRendering
@@ -536,7 +577,7 @@ PanelWindow {
             anchors.centerIn: parent
             text: ab.label
             textFormat: Text.PlainText
-            color: ab.button && ab.button.accent ? Color.accent : win.fg
+            color: ab.button && ab.button.accent ? Commons.Color.accent : win.fg
             font.family: win.fontFamily
             font.pixelSize: Style.font.bodySmall
             font.bold: !!(ab.button && ab.button.accent)

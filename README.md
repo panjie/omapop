@@ -1,7 +1,8 @@
 # Omapop
 
 Select text with the mouse and a small bar of actions appears beside it:
-**Cut, Copy, Paste, Search, Open Link, Reveal in Files**, plus whatever
+**Cut, Copy, Paste, Search, Open Link, Reveal in Files**, built-in **AI text
+actions** (DeepSeek, OpenAI, Claude, Gemini and compatible APIs), plus whatever
 extensions you add. Extensions are YAML snippets, shell scripts or JavaScript,
 and Omapop supports a reviewed subset of the
 [PopClip Extensions Directory](https://www.popclip.app/extensions/).
@@ -231,6 +232,64 @@ Other placement rules: the button marked `wants primary display` (Copy and
 Paste by default) is centred under the pointer; a `wants initial display`
 submenu opens at once with a back button; more buttons than fit in about half
 the screen width spill into a "More" page.
+
+## Built-in AI text actions
+
+AI text processing is part of Omapop and needs only the existing Python 3
+runtime, without a separate extension, Node/Deno or an AI SDK. Open
+**Settings → 配置 AI 服务商与提示词** (or click **配置 AI** after selecting text).
+
+1. Add a connection, choose DeepSeek, OpenAI, Claude, Gemini or a compatible
+   API, and enter its model ID and API key. DeepSeek starts with
+   `deepseek-flash`; other providers accept the model ID available to your account.
+   Base URLs include the API version when required (for example OpenAI `/v1`),
+   but not the final `/responses` or `/chat/completions` endpoint.
+2. Set the default connection and click **保存**. Multiple connections can use
+   the same provider with different models. Compatible local endpoints may use
+   HTTP on localhost and omit the key; remote endpoints require HTTPS.
+3. Under **提示词按钮**, add, duplicate, reorder or disable buttons. Set their
+   name, short icon text/emoji, prompt, connection, toolbar/menu placement and
+   output mode. `{{text}}` substitutes the selection literally wherever it
+   occurs; otherwise the selection is appended. Click **保存** to apply edits.
+4. Select text and click a button. The bundled actions translate into Chinese
+   and explain text/code. Results stream into a Markdown panel with **复制**,
+   **停止 / 重试**, **替换** (editable fields only) and **关闭**.
+
+Preview leaves the clipboard unchanged. Copy mode copies only after successful
+completion. Replacement requires the original active window, unchanged primary
+selection, and a fresh accessibility report confirming a selected, editable
+field. Keyboard input or an outside scroll invalidates replacement. Terminals,
+unknown editability and stale selections fall back to the preview with a manual
+copy instruction. Copying never pastes automatically into another application.
+
+The panel stays open when the pointer moves away. Clicking outside, switching
+windows, closing the panel or starting a new selection cancels the old task;
+late responses are discarded. Stopping or failing retains partial output, marked
+incomplete, without automatically copying or replacing. Retry sends a new
+request and may incur another charge. No automatic retries are performed.
+Requests have a 45-second socket timeout, a 180-second overall deadline and a
+256 KiB result limit. The output token limit is configurable per connection.
+
+Connections and buttons are stored in `~/.config/omapop/ai.json`; keys are stored
+separately in `~/.config/omapop/ai-secrets.json` with mode 0600. This is a private
+plaintext file, not encrypted storage. Keys are excluded from the public config,
+process arguments and error output. An empty key field preserves an existing
+key. Selection content is sent only when you click an AI action; requests do not
+include clipboard contents or conversation history. No local history is saved.
+
+AI settings open inside Omapop's themed popup, with the same fonts and controls
+as its other settings. Use **返回** to return to general settings; click outside
+the popup to dismiss it. Click **保存** before leaving to keep your changes.
+
+Protocols: DeepSeek and compatible endpoints use Chat Completions; OpenAI uses
+[Responses streaming](https://developers.openai.com/api/docs/guides/streaming-responses)
+with `store: false`; Claude uses
+[Messages streaming](https://platform.claude.com/docs/en/build-with-claude/streaming);
+Gemini uses `streamGenerateContent`. DeepSeek's adapter explicitly disables
+thinking for these short text tasks. Model IDs, API access and supported output
+limits depend on your provider/account; arbitrary compatibility endpoints need
+to implement streamed Chat Completions. AI responses are displayed as text and
+Markdown and never executed as commands.
 
 ## Extensions
 
@@ -565,6 +624,8 @@ omarchy plugin validate .
 /usr/lib/qt6/bin/qmllint -I /usr/share/omarchy/shell *.qml
 python3 -m unittest discover -s tests -p 'test_*.py'   # helpers, directory
 node tests/actions.test.mjs
+node tests/ai-service.test.mjs                     # streaming lifecycle, cancellation and replacement guards
+python3 tests/check_settings_ui.py --ai             # AI settings controls, no network calls
 node tests/links.test.mjs                           # URL detection, button choice and opening/copying links
 node tests/gestures.test.mjs                        # click timing and stale read callbacks
 node tests/settings.test.mjs                        # typed settings and preservation of other preferences

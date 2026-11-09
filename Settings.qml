@@ -4,6 +4,7 @@ import QtQuick.Layouts
 import QtQuick.Controls as QQC
 import QtQuick.Window
 import qs.Commons
+import qs.Commons as Commons
 import qs.Ui
 
 ColumnLayout {
@@ -11,7 +12,7 @@ ColumnLayout {
 
     property var service: null
     property string errorText: ""
-    readonly property color secondaryText: Qt.rgba(Color.popups.text.r, Color.popups.text.g, Color.popups.text.b, 0.68)
+    readonly property color secondaryText: Qt.rgba(Commons.Color.popups.text.r, Commons.Color.popups.text.g, Commons.Color.popups.text.b, 0.68)
     readonly property var groups: [
         { title: "Selection", keys: ["longPress", "requireTerminalShift", "position", "shortcut", "excludedApps"] },
         { title: "Search", keys: ["searchEngine", "searchUrl"] },
@@ -40,6 +41,7 @@ ColumnLayout {
     })
 
     signal backRequested()
+    signal aiSettingsRequested()
     signal flushEdits()
 
     spacing: Style.spacing.lg
@@ -106,11 +108,22 @@ ColumnLayout {
             Layout.fillWidth: true
             text: "Omapop settings"
             textFormat: Text.PlainText
-            color: Color.popups.text
+            color: Commons.Color.popups.text
             font.family: Style.font.family
             font.pixelSize: Style.font.heading
             font.weight: Font.DemiBold
         }
+    }
+
+    Button {
+        objectName: "aiSettingsButton"
+        text: "配置 AI 服务商与提示词 →"
+        Layout.fillWidth: true
+        bordered: true
+        focusable: true
+        leftAlign: true
+        tooltipText: "配置 DeepSeek 等连接和提示词按钮"
+        onClicked: { root.finishEditing(); root.aiSettingsRequested() }
     }
 
     Flickable {
@@ -166,7 +179,7 @@ ColumnLayout {
         text: root.errorText || "Changes save automatically."
         textFormat: Text.PlainText
         wrapMode: Text.WordWrap
-        color: root.errorText ? Color.urgent : root.secondaryText
+        color: root.errorText ? Commons.Color.urgent : root.secondaryText
         font.family: Style.font.family
         font.pixelSize: Math.max(1, Style.font.caption - 1)
     }
@@ -219,7 +232,7 @@ ColumnLayout {
             text: row.title
             textFormat: Text.PlainText
             wrapMode: Text.WordWrap
-            color: Color.popups.text
+            color: Commons.Color.popups.text
             font.family: Style.font.family
             font.pixelSize: Style.font.bodySmall
             font.weight: Font.DemiBold

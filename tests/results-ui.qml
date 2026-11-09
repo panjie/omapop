@@ -3,6 +3,7 @@ import QtQuick.Window
 import QtTest
 import Quickshell
 import qs.Commons
+import qs.Commons as Commons
 import ".." as Plugin
 
 TestCase {
@@ -16,7 +17,7 @@ TestCase {
         id: canvas
         width: 420
         height: result.height
-        color: Color.background
+        color: Commons.Color.background
         Plugin.ResultContent { id: result; width: 420; maxHeight: 300 }
     }
     onCompletedChanged: if (completed) console.log("OMAPOP_RESULT_TESTS " + JSON.stringify({passed:qtest_results.passCount,failed:qtest_results.failCount}))
@@ -43,6 +44,19 @@ TestCase {
         result.text = "Short result"
         compare(result.contentY, 0)
         tryVerify(() => result.height < 300)
+    }
+    function test_streaming_preserves_reader_position() {
+        result.streaming = true
+        result.text = ""
+        result.text = "- Streaming item\n".repeat(80)
+        tryVerify(() => result.contentHeight > result.height)
+        result.followTail = false
+        result.contentY = 100
+        result.text += "- Another item\n"
+        wait(20)
+        compare(result.contentY, 100)
+        result.streaming = false
+        result.text = ""
     }
     function test_table_and_code() {
         result.text = "| Name | Value |\n| --- | --- |\n| Answer | 42 |\n\n```js\nconst answer = 42;\n```"

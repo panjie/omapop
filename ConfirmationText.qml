@@ -1,5 +1,6 @@
 import QtQuick 6.11 // omacvm #376: QtQuick's own Color (Qt 6.12) would hide Omarchy's
 import qs.Commons
+import qs.Commons as Commons
 
 // Shared by the real popup and the offscreen control tests.
 Column {
@@ -7,7 +8,7 @@ Column {
     property string summary: ""
     property string details: ""
     property real maxDetailsHeight: 320
-    property color foreground: Color.popups.text
+    property color foreground: Commons.Color.popups.text
     property string fontFamily: Style.font.family
     spacing: Style.spacing.sm
     Text {

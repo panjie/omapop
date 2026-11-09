@@ -51,6 +51,8 @@ function harness(autoComplete = true) {
   };
   const c = vm.createContext({
     Date: { now: () => now },
+    popupContainsPoint() { return false; },
+    aiService: {active: false, cancel() {}, buttons() { return []; }},
     ...pressState, selectionSerial: 0, lastPressSelectionSerial: 0,
     pendingRelease: null, lastReleaseInfo: null, clickCount: 0,
     multiClickInterval: 450, clickSettleInterval: 80, dragThreshold: 6, paused: false,

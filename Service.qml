@@ -62,6 +62,22 @@ Item {
         NODE_NO_WARNINGS: "1"
     })
 
+    readonly property alias ai: aiService
+    AiService { id: aiService; host: root }
+    function beginAiResult() {
+        popup.aiMode = true
+        popup.showResult("", false)
+        updateAiResult()
+    }
+    function updateAiResult() {
+        if (!aiService.active || !popup.visible) return
+        popup.aiRunning = aiService.running
+        popup.aiStatus = aiService.status
+        popup.resultText = aiService.text
+        popup.aiCanReplace = !!current && current.context.canReplace && !aiService.running
+        rearm.restart()
+    }
+
     // ------------------------------------------------------------ settings
 
     // A plugin with a bar widget is enabled from bar.layout rather than
@@ -662,14 +678,16 @@ Item {
         } else if (kind === "shortcut") {
             trigger(parseContext(f, 1), "shortcut")
         } else if (kind === "key") {
+            if (aiService.active) aiService.contextValid = false
             if (popup.visible) log("POP_AI_UI_TRACE dismiss event=key")
             cancelSelection()
-            if (popup.visible && !busy && !popup.keyboardMode)
+            if (popup.visible && !busy && !popup.keyboardMode && !aiService.active)
                 hidePopup()
         } else if (kind === "far" || kind === "scroll") {
+            if (kind === "scroll" && aiService.active) aiService.contextValid = false
             if (popup.visible) log("POP_AI_UI_TRACE dismiss event=" + kind)
             cancelSelection()
-            if (popup.visible && !busy)
+            if (popup.visible && !busy && !aiService.active)
                 hidePopup()
         }
     }
@@ -1177,6 +1195,8 @@ Item {
     }
 
     function present(ctx, input, context, kind, dynamicReady) {
+        if (aiService.active) aiService.cancel(true)
+        popup.aiMode = false
         if (!dynamicReady) {
             var fresh = Object.assign({}, moduleActions)
             for (var d = 0; d < extensions.length; d++)
@@ -1190,7 +1210,7 @@ Item {
                 return ext.enabled && ext.module && (ext.entitlements || []).indexOf("dynamic") !== -1
             }).slice(0, 16)
             var next = function () {
-                if (generation !== readGeneration || current !== session || busy) return
+                if (generation !== readGeneration || current !== session || busy || aiService.active) return
                 if (!dynamic.length) {
                     if (popup.visible) present(ctx, input, context, kind, true)
                     return
@@ -1200,7 +1220,7 @@ Item {
             if (dynamic.length) next()
             return
         }
-        var buttons = builtinButtons(input, context).concat(extensionButtons(input, context))
+        var buttons = builtinButtons(input, context).concat(aiService.buttons(input), extensionButtons(input, context))
         if (!buttons.length) {
             if (selectionUpdating)
                 hidePopup()
@@ -1242,6 +1262,10 @@ Item {
         onButtonClicked: function (button, qtModifiers) { root.handleClick(button, qtModifiers) }
         onResultClicked: root.handleResultClick()
         onResultCopied: root.handleResultCopy()
+        onAiCopy: aiService.copy()
+        onAiReplace: aiService.replace()
+        onAiRetry: aiService.retry()
+        onAiStop: aiService.cancel(false)
         onConfirmAccepted: root.handleConfirm(true)
         onConfirmRejected: root.handleConfirm(false)
         onBusyCancelled: root.cancelBusy()
@@ -1281,6 +1305,8 @@ Item {
 
     function hidePopup() {
         log("POP_AI_UI_TRACE hide mode=" + popup.mode + " busy=" + busy)
+        aiService.cancel(true)
+        popup.aiMode = false
         pendingConfirm = null
         cancelSelection()
         selectionUpdating = false
@@ -1334,6 +1360,8 @@ Item {
         log("POP_AI_UI_TRACE click hasCurrent=" + !!current + " busy=" + busy + " updating=" + selectionUpdating + " builtin=" + !!button.builtin)
         if (!current || busy || selectionUpdating)
             return
+        if (button.aiSetup) { hidePopup(); aiService.openSettings(); return }
+        if (button.aiAction) { aiService.run(button.aiAction); return }
         var mods = clickModifiers(qtModifiers)
         if (button.submenu && button.submenu.length && (button.isFolder || mods.rightClick || !button.action || (!button.action.hasCode && button.action.type === "folder"))) {
             popup.pushSubmenu(button.submenu)
@@ -1348,6 +1376,7 @@ Item {
     }
 
     function handleResultClick() {
+        if (aiService.active) { aiService.copy(); return }
         if (!current || !popup.resultPreview) {
             hidePopup()
             return
@@ -1357,6 +1386,7 @@ Item {
     }
 
     function handleResultCopy() {
+        if (aiService.active) { aiService.copy(); return }
         if (!current)
             return
         var session = current
@@ -2551,6 +2581,12 @@ Item {
     }
 
     signal settingsRequested()
+    signal aiSettingsRequested()
+    function openAiSettings() {
+        if (!shell || typeof shell.summon !== "function") return "No Omapop widget is available."
+        aiSettingsRequested()
+        return shell.summon(pluginId, "") ? "ok" : "No Omapop widget is available."
+    }
 
     function openSettings() {
         if (!shell || typeof shell.summon !== "function")
@@ -2566,6 +2602,7 @@ Item {
         target: "io.github.jondkinney.omapop"
         function show(): string { root.showForCurrentSelection(); return "ok" }
         function settings(): string { return root.openSettings() }
+        function aiSettings(): string { return root.openAiSettings() }
         function hide(): string { root.hidePopup(); return "ok" }
         function pause(): string { root.paused = true; return "ok" }
         function resume(): string { root.paused = false; return "ok" }

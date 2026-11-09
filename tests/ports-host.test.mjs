@@ -11,6 +11,7 @@ function harness() {
     popup:{visible:true,showBusy(){},showConfirm(...args){prompts.push(args)},dismiss(){this.visible=false},keyboardMode:false},
     spawn(spec,callback){calls.push({spec,callback});return {cancel(){}}},parseJson:JSON.parse,
     showResult(message){results.push(message)},scriptFailed(message){s.current.failed=true;results.push(message)},
+    log(){}, aiService:{cancel(){}},
     Actions:{oneLine:(s,n)=>s.slice(0,n)},cancelSelection(){},luaCall(){},rearm:{restart(){}},
   });
   vm.runInContext(code,s);return {s,calls,results,prompts};
