@@ -12,6 +12,8 @@ ColumnLayout {
     id: root
     objectName: "shortcutRecorder"
 
+    Commons.Translations { id: strings; directory: Qt.resolvedUrl("i18n") }
+
     property string value: ""
     property bool recording: false
     property string pendingCombo: ""
@@ -102,13 +104,13 @@ ColumnLayout {
         if (modifierForKey(event.key) || pendingCombo) return
         var key = keyName(event.key, (event.modifiers & Qt.KeypadModifier) !== 0)
         if (!key || (event.modifiers & Qt.GroupSwitchModifier)) {
-            hint = "That key cannot be recorded. Try another combination."
+            hint = strings.t("shortcut.badKey")
             return
         }
         // A global binding on an ordinary typing key would intercept typing
         // in every app. Function/navigation/media keys may stand alone.
         if (event.key <= 0x10ffff && !(event.modifiers & (Qt.ControlModifier | Qt.AltModifier | Qt.MetaModifier))) {
-            hint = "Include Ctrl, Alt, or Super with a typing key."
+            hint = strings.t("shortcut.needModifier")
             return
         }
         var parts = []
@@ -166,7 +168,7 @@ ColumnLayout {
                 anchors.fill: parent
                 anchors.margins: Style.spacing.md
                 verticalAlignment: Text.AlignVCenter
-                text: root.recording ? (root.pendingCombo || "Press keys…") : (Actions.oneLine(root.value, 64) || "Not set")
+                text: root.recording ? (root.pendingCombo || strings.t("shortcut.pressKeys")) : (Actions.oneLine(root.value, 64) || strings.t("shortcut.notSet"))
                 textFormat: Text.PlainText
                 elide: Text.ElideRight
                 color: root.value || root.recording ? Commons.Color.popups.text : root.secondaryText
@@ -177,7 +179,7 @@ ColumnLayout {
         Button {
             id: recordButton
             objectName: "shortcutRecord"
-            text: root.recording ? "Cancel" : "Record"
+            text: root.recording ? strings.t("common.cancel") : strings.t("common.record")
             // Keep capture focus until this click cancels; focusing the button
             // first would cancel via focus loss and then start a new recording.
             focusable: !root.recording
@@ -186,7 +188,7 @@ ColumnLayout {
         }
         Button {
             objectName: "shortcutClear"
-            text: "Clear"
+            text: strings.t("common.clear")
             focusable: true
             enabled: root.value !== "" && !root.recording
             onClicked: root.edited("")
@@ -195,7 +197,7 @@ ColumnLayout {
     Text {
         Layout.fillWidth: true
         visible: root.recording
-        text: root.hint || (root.pendingCombo ? "Release the keys to save. Esc cancels." : "Press your shortcut. Esc cancels.")
+        text: root.hint || (root.pendingCombo ? strings.t("shortcut.release") : strings.t("shortcut.press"))
         textFormat: Text.PlainText
         wrapMode: Text.WordWrap
         color: root.hint ? Commons.Color.urgent : root.secondaryText

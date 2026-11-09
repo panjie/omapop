@@ -11,6 +11,8 @@ ColumnLayout {
     id: root
     objectName: "excludedAppsEditor"
 
+    Commons.Translations { id: strings; directory: Qt.resolvedUrl("i18n") }
+
     property string value: ""
     property var windows: []
     readonly property bool editable: value.length <= 4096
@@ -41,9 +43,9 @@ ColumnLayout {
         Layout.fillWidth: true
         enabled: root.editable
         showLabel: false
-        triggerLabel: "Add from running windows…"
-        placeholderText: "Search windows or apps…"
-        emptyText: root.options.length ? "No matching windows" : "No more apps to add"
+        triggerLabel: strings.t("excluded.add")
+        placeholderText: strings.t("excluded.search")
+        emptyText: root.options.length ? strings.t("excluded.noMatches") : strings.t("excluded.noMore")
         options: root.options
         onChanged: function (next) {
             root.add(next)
@@ -85,7 +87,7 @@ ColumnLayout {
             PanelActionButton {
                 objectName: "excludedAppsRemove_" + entryRow.index
                 iconText: "×"
-                tooltipText: "Remove " + Actions.oneLine(entryRow.modelData, 256)
+                tooltipText: strings.t("excluded.remove").arg(Actions.oneLine(entryRow.modelData, 256))
                 foreground: root.secondaryText
                 hoverColor: Commons.Color.popups.text
                 focusable: true
@@ -98,7 +100,7 @@ ColumnLayout {
     Text {
         Layout.fillWidth: true
         visible: !root.editable || !root.entries.length
-        text: root.editable ? "No apps ignored." : "This list is too long to edit here."
+        text: root.editable ? strings.t("excluded.none") : strings.t("excluded.tooLong")
         textFormat: Text.PlainText
         wrapMode: Text.WordWrap
         color: root.editable ? root.secondaryText : Commons.Color.urgent

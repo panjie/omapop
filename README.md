@@ -27,6 +27,9 @@ build.
   and extension output in a themed, scrollable card with headings, lists, tables
   and fenced code blocks. Long and multi-line results support keyboard scrolling,
   copying and, for previews, pasting back into the original application.
+- **Localized interface**: Omapop follows the language selected under
+  **Omarchy Setup → Language**. English, Simplified Chinese and Traditional
+  Chinese catalogs are included; see [Localization](#localization).
 
 ## Install
 
@@ -185,6 +188,19 @@ preferences. Installed extension packages and their preferences live under
 `~/.config/omapop/`; copy those separately, and exclude secret extension option
 values from Git history.
 
+## Localization
+
+Omapop's interface follows the language chosen under **Omarchy Setup → Language**
+and updates without restarting the shell. The plugin ships flat catalogs in
+`i18n/`: `en.json`, `zh-CN.json` and `zh-TW.json`. Missing strings fall back to
+English, and installed extension names, descriptions and option labels stay in
+the extension's own language.
+
+To add another Omarchy language, copy `i18n/en.json`, translate its values, and
+save it under the matching code from
+`$OMARCHY_PATH/default/i18n/locales.json` (for example `ja.json`). Keep the keys
+and `%1` placeholders unchanged.
+
 ## When each button appears
 
 Every button is filtered against the selection and the window it came from.
@@ -248,23 +264,24 @@ the screen width spill into a "More" page.
 
 AI text processing is part of Omapop and needs only the existing Python 3
 runtime, without a separate extension, Node/Deno or an AI SDK. Open
-**Settings → 配置 AI 服务商与提示词** (or click **配置 AI** after selecting text).
+**Settings → Configure AI providers and prompts** (or click **Configure AI**
+after selecting text).
 
 1. Add a connection, choose DeepSeek, OpenAI, Claude, Gemini or a compatible
    API, and enter its model ID and API key. DeepSeek starts with
    `deepseek-flash`; other providers accept the model ID available to your account.
    Base URLs include the API version when required (for example OpenAI `/v1`),
    but not the final `/responses` or `/chat/completions` endpoint.
-2. Set the default connection and click **保存**. Multiple connections can use
+2. Set the default connection and click **Save**. Multiple connections can use
    the same provider with different models. Compatible local endpoints may use
    HTTP on localhost and omit the key; remote endpoints require HTTPS.
-3. Under **提示词按钮**, add, duplicate, reorder or disable buttons. Set their
+3. Under **Prompt buttons**, add, duplicate, reorder or disable buttons. Set their
    name, short icon text/emoji, prompt, connection, toolbar/menu placement and
    output mode. `{{text}}` substitutes the selection literally wherever it
-   occurs; otherwise the selection is appended. Click **保存** to apply edits.
+   occurs; otherwise the selection is appended. Click **Save** to apply edits.
 4. Select text and click a button. The bundled actions translate into Chinese
-   and explain text/code. Results stream into a Markdown panel with **复制**,
-   **停止 / 重试**, **替换** (editable fields only) and **关闭**.
+   and explain text/code. Results stream into a Markdown panel with **Copy**,
+   **Stop / Retry**, **Replace** (editable fields only) and **Close**.
 
 Preview leaves the clipboard unchanged. Copy mode copies only after successful
 completion. Replacement requires the original active window, unchanged primary

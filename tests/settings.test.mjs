@@ -3,6 +3,7 @@ import { readFileSync } from "node:fs";
 import vm from "node:vm";
 import assert from "node:assert/strict";
 import test from "node:test";
+import { strings, argPolyfill } from "./translations.mjs";
 
 const source = readFileSync(new URL("../Service.qml", import.meta.url), "utf8");
 const manifest = JSON.parse(readFileSync(new URL("../manifest.json", import.meta.url), "utf8"));
@@ -13,6 +14,7 @@ function harness() {
   const writes = [];
   const c = vm.createContext({
     pluginId: manifest.id, settingsSchema: manifest.barWidget.schema, widgetSettings: null,
+    strings,
     settings: { id: manifest.id, searchEngine: "kagi", futureSetting: { keep: true } },
     shell: { updateEntryInline(id, entry) {
       assert.equal(id, manifest.id);
@@ -21,6 +23,7 @@ function harness() {
       return true;
     } },
   });
+  vm.runInContext(argPolyfill, c);
   vm.runInContext(functions, c, { filename: "Service.qml" });
   return { c, writes };
 }

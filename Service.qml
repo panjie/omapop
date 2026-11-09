@@ -4,6 +4,7 @@ import Quickshell.Io
 import Quickshell.Hyprland
 import Quickshell.Wayland
 import qs.Commons
+import qs.Commons as Commons
 import "Actions.js" as Actions
 import "OutputBuffer.js" as OutputBuffer
 
@@ -64,6 +65,7 @@ Item {
 
     readonly property alias ai: aiService
     AiService { id: aiService; host: root }
+    Commons.Translations { id: strings; directory: Qt.resolvedUrl("i18n") }
     function beginAiResult() {
         popup.aiMode = true
         popup.showResult("", false)
@@ -132,33 +134,33 @@ Item {
             }
         }
         if (!field)
-            return "Unknown setting."
+            return strings.t("service.setting.unknown")
         if (field.type === "boolean") {
-            if (typeof value !== "boolean") return "Choose on or off."
+            if (typeof value !== "boolean") return strings.t("service.setting.boolean")
         } else if (field.type === "integer") {
             if (typeof value !== "number" || !isFinite(value) || Math.floor(value) !== value
                     || value < field.min || value > field.max)
-                return "Enter a whole number between " + field.min + " and " + field.max + "."
+                return strings.t("service.setting.integer").arg(field.min).arg(field.max)
         } else if (field.type === "enum") {
             if (typeof value !== "string" || field.options.indexOf(value) < 0)
-                return "Choose one of the listed options."
+                return strings.t("service.setting.enum")
         } else if (field.type === "string") {
             if (typeof value !== "string" || value.length > (name === "shortcut" ? 64 : 4096))
-                return "This value is too long."
+                return strings.t("service.setting.tooLong")
         } else {
-            return "This setting cannot be edited here."
+            return strings.t("service.setting.notEditable")
         }
         if (setting(name, undefined) === value)
             return ""
         if (!shell || typeof shell.updateEntryInline !== "function")
-            return "The shell is unavailable. Try opening settings again."
+            return strings.t("service.setting.shellUnavailable")
         var next = Object.assign({}, settings)
         next[name] = value
         try {
             if (!shell.updateEntryInline(pluginId, next))
-                return "Could not save this setting. Check that Omapop is enabled."
+                return strings.t("service.setting.saveFailedEnabled")
         } catch (error) {
-            return "Could not save this setting. Try again."
+            return strings.t("service.setting.saveFailed")
         }
         return ""
     }
@@ -1068,19 +1070,19 @@ Item {
         var list = []
         var hasText = input.text.length > 0
         if (hasText && context.canCut)
-            list.push({ id: "builtin.cut", title: "Cut", showAs: "text", textLabel: "Cut", builtin: "cut", wantsPrimaryDisplay: false })
+            list.push({ id: "builtin.cut", title: strings.t("action.cut"), showAs: "text", textLabel: strings.t("action.cut"), builtin: "cut", wantsPrimaryDisplay: false })
         if (hasText)
-            list.push({ id: "builtin.copy", title: "Copy", showAs: "text", textLabel: "Copy", builtin: "copy", wantsPrimaryDisplay: true })
+            list.push({ id: "builtin.copy", title: strings.t("action.copy"), showAs: "text", textLabel: strings.t("action.copy"), builtin: "copy", wantsPrimaryDisplay: true })
         if (context.canPaste)
-            list.push({ id: "builtin.paste", title: "Paste", showAs: "text", textLabel: "Paste", builtin: "paste", wantsPrimaryDisplay: true })
+            list.push({ id: "builtin.paste", title: strings.t("action.paste"), showAs: "text", textLabel: strings.t("action.paste"), builtin: "paste", wantsPrimaryDisplay: true })
         if (hasText && input.text.length <= 4000 && !input.isUrl)
-            list.push({ id: "builtin.search", title: "Search", glyph: builtinGlyphs.search, builtin: "search" })
+            list.push({ id: "builtin.search", title: strings.t("action.search"), glyph: builtinGlyphs.search, builtin: "search" })
         if (input.data.urls.length || input.data.nonHttpUrls.length)
-            list.push({ id: "builtin.openlink", title: input.data.urls.length + input.data.nonHttpUrls.length > 1 ? "Open Links" : "Open Link", glyph: builtinGlyphs.link, builtin: "openlink" })
+            list.push({ id: "builtin.openlink", title: strings.t(input.data.urls.length + input.data.nonHttpUrls.length > 1 ? "action.openLinks" : "action.openLink"), glyph: builtinGlyphs.link, builtin: "openlink" })
         if (input.data.paths.length === 1 && input.text.trim().length > 0)
-            list.push({ id: "builtin.reveal", title: "Reveal in Files", glyph: builtinGlyphs.reveal, builtin: "reveal" })
+            list.push({ id: "builtin.reveal", title: strings.t("action.reveal"), glyph: builtinGlyphs.reveal, builtin: "reveal" })
         if (input.snippet)
-            list.push({ id: "builtin.install", title: "Install Extension" + (input.snippet.name ? " \"" + input.snippet.name + "\"" : ""), glyph: builtinGlyphs.install, builtin: "install" })
+            list.push({ id: "builtin.install", title: input.snippet.name ? strings.t("action.installNamed").arg(input.snippet.name) : strings.t("action.install"), glyph: builtinGlyphs.install, builtin: "install" })
         return list
     }
 
@@ -1190,7 +1192,7 @@ Item {
             return list
         var head = list.slice(0, perPage - 1)
         var rest = paginate(list.slice(perPage - 1), perPage)
-        head.push({ id: "more", title: "More", glyph: "\u{F0142}", submenu: rest, isFolder: true, action: { type: "folder" } })
+        head.push({ id: "more", title: strings.t("action.more"), glyph: "\u{F0142}", submenu: rest, isFolder: true, action: { type: "folder" } })
         return head
     }
 
@@ -1488,7 +1490,7 @@ Item {
 
     function copyTypedText(text, mime, done) {
         if (mime !== "text/rtf" || typeof text !== "string" || text.length > 131072) {
-            scriptFailed("Unsupported clipboard format or oversized content", false)
+            scriptFailed(strings.t("service.error.clipboardFormat"), false)
             done()
             return
         }
@@ -1496,14 +1498,14 @@ Item {
         spawn({ command: ["/usr/bin/python3", "-I", clipboardHelper, "--type", mime],
             stdin: text, limit: 4096, deadline: 8000 }, function (result) {
             if (current !== session) return
-            if (!result.ok) scriptFailed("Rich clipboard write failed", false)
+            if (!result.ok) scriptFailed(strings.t("service.error.richClipboard"), false)
             done()
         })
     }
 
     function runNativeAction(kind, options, button, done) {
         if (!current || !button || (button.ext.entitlements || []).indexOf("native") === -1) {
-            scriptFailed("Native action is not permitted", false)
+            scriptFailed(strings.t("service.error.nativeNotPermitted"), false)
             done()
             return
         }
@@ -1520,7 +1522,7 @@ Item {
                 busy = false
                 var reply = result.ok ? parseJson(result.stdout, 262144) : null
                 if (!reply || reply.ok !== true)
-                    scriptFailed(reply ? reply.error : "Native action failed or timed out", false)
+                    scriptFailed(reply ? reply.error : strings.t("service.error.nativeFailed"), false)
                 else {
                     session.lastResult = reply.text || ""
                     if (reply.message) {
@@ -1534,9 +1536,9 @@ Item {
         if (kind === "print" || kind === "execute") {
             busy = false
             pendingConfirm = invoke
-            var prompt = kind === "print" ? "Print the selected text on " + (options.printer || "the default printer") + "?"
-                : "Run this selection as a Bash script in a terminal? It will have your user permissions."
-            popup.showConfirm(prompt, kind === "print" ? "Print" : "Run script", session.input.text)
+            var prompt = kind === "print" ? strings.t("service.confirm.print").arg(options.printer || strings.t("service.confirm.defaultPrinter"))
+                : strings.t("service.confirm.runScript")
+            popup.showConfirm(prompt, kind === "print" ? strings.t("service.confirm.printAction") : strings.t("service.confirm.runScriptAction"), session.input.text)
         } else invoke()
     }
 
@@ -1633,17 +1635,17 @@ Item {
             }, function (result) {
                 var parsed = parseJson(result.stdout, 65536)
                 if (result.ok && parsed && parsed.ok === true) {
-                    showResult("Installed \"" + Actions.oneLine(parsed.name || "", 60) + "\"", false)
+                    showResult(strings.t("service.result.installed").arg(Actions.oneLine(parsed.name || "", 60)), false)
                     rescanExtensions()
                 } else {
                     var err = parsed && parsed.error ? parsed.error : (result.stderr || "install failed")
-                    showResult("Could not install: " + Actions.oneLine(err, 120), false)
+                    showResult(strings.t("service.result.installFailed").arg(Actions.oneLine(err, 120)), false)
                 }
             })
         }
         pendingConfirm = doInstall
-        var name = current && current.input.snippet && current.input.snippet.name ? current.input.snippet.name : "extension"
-        popup.showConfirm("Install \"" + name + "\"?" + (hasCode ? " It runs code on this machine." : ""), "Install")
+        var name = current && current.input.snippet && current.input.snippet.name ? current.input.snippet.name : strings.t("service.confirm.installGeneric")
+        popup.showConfirm(strings.t("service.confirm.install").arg(name) + (hasCode ? strings.t("service.confirm.installCode") : ""), strings.t("common.install"))
         rearm.restart()
     }
 
@@ -1721,7 +1723,7 @@ Item {
             for (var i = 0; i < (action.keyCombos || []).length; i++) {
                 var parsed = Actions.parseKeyCombo(action.keyCombos[i], Actions.extensionCommandKey(commandKey, button.ext.commandKey))
                 if (!parsed) {
-                    showResult("Bad key combo: " + Actions.oneLine(action.keyCombos[i], 40), false)
+                    showResult(strings.t("service.result.badKey").arg(Actions.oneLine(action.keyCombos[i], 40)), false)
                     return
                 }
                 combos.push(parsed)
@@ -1732,7 +1734,7 @@ Item {
         } else if (type === "javascript" || type === "module") {
             mainStep = function (next) { runJavascriptAction(button, mods, next) }
         } else {
-            showResult("Unsupported action type", false)
+            showResult(strings.t("service.result.unsupported"), false)
             return
         }
         var steps = []
@@ -1786,7 +1788,7 @@ Item {
         }
         switch (after) {
         case "copy-result":
-            copyText(text, function () { showResult("Copied", false); autoHide.restart() })
+            copyText(text, function () { showResult(strings.t("service.result.copied"), false); autoHide.restart() })
             break
         case "paste-result":
             pasteOrCopy(function () { finishAction(button) })
@@ -1826,7 +1828,7 @@ Item {
         current.failed = true
         busy = false
         if (openSettings)
-            showResult("Configure " + Actions.oneLine(message, 80) + " using its gear in Installed extensions.", false)
+            showResult(strings.t("service.result.configure").arg(Actions.oneLine(message, 80)), false)
         else if (message)
             showResult(Actions.oneLine(message, 160), false)
         else
@@ -1857,7 +1859,7 @@ Item {
                 argv = ["/usr/bin/bash", mode === "login" ? "-lc" : "-c", "exec \"$@\"", "omapop"].concat(target)
         } else {
             if (!interpreter) {
-                scriptFailed("shell script has no interpreter", false)
+                scriptFailed(strings.t("service.error.noInterpreter"), false)
                 done()
                 return
             }
@@ -1882,7 +1884,7 @@ Item {
             if (!current)
                 return
             if (result.timedOut || result.truncated) {
-                scriptFailed(result.truncated ? "script output too large" : "script timed out", false)
+                scriptFailed(result.truncated ? strings.t("service.error.outputTooLarge") : strings.t("service.error.timedOut"), false)
             } else if (result.code === 2) {
                 scriptFailed(button.ext.name, true)
             } else if (!result.ok) {
@@ -1949,7 +1951,7 @@ Item {
         var action = button.action
         var argv = runtimeCommand(ext.dir, (ext.entitlements || []).indexOf("network") !== -1)
         if (!argv) {
-            scriptFailed("JavaScript actions need deno or nodejs installed", false)
+            scriptFailed(strings.t("service.error.noRuntime"), false)
             done()
             return
         }
@@ -2010,13 +2012,13 @@ Item {
                     var kind = actionError.kind || "error"
                     scriptFailed(kind === "settings" || kind === "signin" ? ext.name : Actions.oneLine(actionError.message || "", 160), kind === "settings" || kind === "signin")
                 } else if (effectOverflow)
-                    scriptFailed("too many script effects", false)
+                    scriptFailed(strings.t("service.error.tooManyEffects"), false)
                 else if (result.timedOut)
-                    scriptFailed("script timed out", false)
+                    scriptFailed(strings.t("service.error.timedOut"), false)
                 else if (result.truncated)
-                    scriptFailed("script output too large", false)
+                    scriptFailed(strings.t("service.error.outputTooLarge"), false)
                 else
-                    scriptFailed(Actions.oneLine(result.stderr || "the script did not finish", 160), false)
+                    scriptFailed(Actions.oneLine(result.stderr || strings.t("service.error.didNotFinish"), 160), false)
                 done()
                 return
             }
@@ -2049,7 +2051,7 @@ Item {
                 copyText(text, done)
             return
         case "copyText":
-            copyText(text, function () { if (opts.notify !== false) { showResult("Copied", false); autoHide.restart() } done() })
+            copyText(text, function () { if (opts.notify !== false) { showResult(strings.t("service.result.copied"), false); autoHide.restart() } done() })
             return
         case "pasteboardWrite":
             copyText(text, done)
@@ -2088,7 +2090,7 @@ Item {
             break
         case "showSettings":
             current.actionResultVisible = true
-            showResult("Use the gear beside this extension in Installed extensions.", false)
+            showResult(strings.t("service.result.useGear"), false)
             break
         case "appear":
             delay(150, function () { showForCurrentSelection() })
@@ -2396,7 +2398,7 @@ Item {
             var parsed = parseJson(result.stdout, 2097152)
             if (!parsed || parsed.ok !== true) {
                 directoryResults = []
-                directoryStatus = parsed && parsed.error ? Actions.oneLine(parsed.error, 200) : "the catalogue could not be read"
+                directoryStatus = parsed && parsed.error ? Actions.oneLine(parsed.error, 200) : strings.t("service.directory.unreadable")
                 return
             }
             var items = Array.isArray(parsed.extensions) ? parsed.extensions : []
@@ -2424,12 +2426,12 @@ Item {
             directoryFetched = Actions.oneLine(parsed.fetched || "", 40)
             if (!list.length)
                 directoryStatus = directoryTotal
-                    ? "Nothing matched that." + (directoryHidden ? " " + directoryHidden + " hidden (need macOS)." : "")
-                    : "No catalogue yet."
+                    ? (directoryHidden ? strings.t("service.directory.noMatchesHidden").arg(directoryHidden) : strings.t("service.directory.noMatches"))
+                    : strings.t("service.directory.empty")
             // First run (or a build with no snapshot): fetch one, once.
             if (directoryTotal === 0 && directoryRefresh && !directoryAutoFetched) {
                 directoryAutoFetched = true
-                directoryStatus = "Fetching the catalogue\u2026"
+                directoryStatus = strings.t("service.directory.fetching")
                 refreshDirectory(7)
             } else if (directoryWantsClassify && directoryPending > 0) {
                 classifyDirectory()
@@ -2476,7 +2478,7 @@ Item {
 
     function installFromDirectory(shortcode) {
         if (!extensionDownloads) {
-            directoryStatus = "Enable extension installs in Settings first."
+            directoryStatus = strings.t("service.directory.installDisabled")
             return
         }
         var code = String(shortcode || "").replace(/[^A-Za-z0-9]/g, "").slice(0, 16)
@@ -2496,16 +2498,16 @@ Item {
                 var name = Actions.oneLine(parsed.name || code, 60)
                 var platform = parsed.platform && typeof parsed.platform === "object" ? parsed.platform : {}
                 if (platform.error)
-                    directoryStatus = "Installed " + name + ", but it could not be read: " + Actions.oneLine(platform.error, 120)
+                    directoryStatus = strings.t("service.directory.installedUnreadable").arg(name).arg(Actions.oneLine(platform.error, 120))
                 else if (platform.usable === false)
-                    directoryStatus = "Installed " + name + ", but it " + Actions.oneLine(platform.note || "cannot run here", 160) + ", so it stays disabled."
+                    directoryStatus = strings.t("service.directory.installedCannotRun").arg(name).arg(Actions.oneLine(platform.note || strings.t("service.directory.cannotRun"), 160))
                 else if (platform.note)
-                    directoryStatus = "Installed " + name + "; " + Actions.oneLine(platform.note, 160) + "."
+                    directoryStatus = strings.t("service.directory.installedNote").arg(name).arg(Actions.oneLine(platform.note, 160))
                 else
-                    directoryStatus = "Installed " + name + ". Enable it in Installed extensions when ready."
+                    directoryStatus = strings.t("service.directory.installed").arg(name)
                 rescanExtensions()
             } else {
-                directoryStatus = "Could not install: " + Actions.oneLine((parsed && parsed.error) || result.stderr || "the download failed", 160)
+                directoryStatus = strings.t("service.directory.installFailed").arg(Actions.oneLine((parsed && parsed.error) || result.stderr || strings.t("service.directory.downloadFailed"), 160))
             }
         })
     }
@@ -2530,10 +2532,10 @@ Item {
                 // "skipped" (still fresh) and "unchanged" (server said 304) carry
                 // no count, so only a real re-index reports one.
                 if (parsed.skipped !== true && parsed.unchanged !== true)
-                    directoryStatus = "Catalogue updated: " + (Number(parsed.count) || 0) + " extensions"
+                    directoryStatus = strings.t("service.directory.updated").arg(Number(parsed.count) || 0)
                 searchDirectory(directoryQuery)
             } else {
-                directoryStatus = "Could not update the catalogue: " + Actions.oneLine((parsed && parsed.error) || "no answer", 160)
+                directoryStatus = strings.t("service.directory.updateFailed").arg(Actions.oneLine((parsed && parsed.error) || strings.t("service.directory.noAnswer"), 160))
             }
         })
     }
@@ -2583,18 +2585,18 @@ Item {
     signal settingsRequested()
     signal aiSettingsRequested()
     function openAiSettings() {
-        if (!shell || typeof shell.summon !== "function") return "No Omapop widget is available."
+        if (!shell || typeof shell.summon !== "function") return strings.t("service.widget.unavailable")
         aiSettingsRequested()
-        return shell.summon(pluginId, "") ? "ok" : "No Omapop widget is available."
+        return shell.summon(pluginId, "") ? "ok" : strings.t("service.widget.unavailable")
     }
 
     function openSettings() {
         if (!shell || typeof shell.summon !== "function")
-            return "No Omapop widget is available."
+            return strings.t("service.widget.unavailable")
         // Each of our widgets selects its settings page; the shell chooses
         // which monitor to open through the public, self-scoped API.
         settingsRequested()
-        return shell.summon(pluginId, "") ? "ok" : "No Omapop widget is available."
+        return shell.summon(pluginId, "") ? "ok" : strings.t("service.widget.unavailable")
     }
 
     // `omarchy-shell io.github.jondkinney.omapop <method>` from scripts and binds.

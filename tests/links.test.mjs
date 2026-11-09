@@ -5,6 +5,7 @@ import { spawnSync } from 'node:child_process';
 import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import vm from 'node:vm';
+import { strings, argPolyfill } from './translations.mjs';
 
 const cases = [
   ['example.com', ['openlink'], ['https://example.com']],
@@ -40,8 +41,10 @@ const functions = [...source.matchAll(/^    function (\w+)\([^]*?^    \}/gm)]
 const opened = [], copied = [];
 const service = vm.createContext({
   Actions: actions, builtinGlyphs: {}, searchTemplate: actions.SEARCH_ENGINES.google,
+  strings,
   openUrl: url => opened.push(url), copyText: text => copied.push(text), hidePopup() {},
 });
+vm.runInContext(argPolyfill, service);
 vm.runInContext(functions, service);
 for (const [index, [text, expectedButtons, expectedUrls]] of cases.entries()) {
   const input = service.buildInput(text, selections[index]);

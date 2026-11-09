@@ -8,6 +8,9 @@ import qs.Ui as Ui
 ColumnLayout {
     id: root
     required property var ai
+
+    Commons.Translations { id: strings; directory: Qt.resolvedUrl("i18n") }
+
     signal backRequested()
     spacing: Style.spacing.lg
     readonly property color foreground: Commons.Color.popups.text
@@ -71,7 +74,7 @@ ColumnLayout {
         if (kind === "connections") {
             next.connections.push({id: id, name: "DeepSeek", provider: "deepseek", baseUrl: urls[0], model: "deepseek-flash", maxTokens: 4096})
             if (!next.defaultConnection) next.defaultConnection = id
-        } else next.buttons.push({id: id, title: "新按钮", icon: "AI", prompt: "请处理以下文字：\n\n{{text}}", connection: "", enabled: true, placement: "toolbar", output: "preview"})
+        } else next.buttons.push({id: id, title: strings.t("ai.newButton"), icon: "AI", prompt: strings.t("ai.newPrompt"), connection: "", enabled: true, placement: "toolbar", output: "preview"})
         draft = next
         if (kind === "connections") connectionIndex = next.connections.length - 1
         else buttonIndex = next.buttons.length - 1
@@ -108,17 +111,17 @@ ColumnLayout {
     RowLayout {
         Layout.fillWidth: true
         spacing: Style.spacing.lg
-        ActionButton { text: "返回"; onClicked: root.backRequested() }
-        Label { Layout.fillWidth: true; text: "AI 文本处理"; font.pixelSize: Style.font.heading; font.weight: Font.DemiBold }
+        ActionButton { text: strings.t("common.back"); onClicked: root.backRequested() }
+        Label { Layout.fillWidth: true; text: strings.t("ai.title"); font.pixelSize: Style.font.heading; font.weight: Font.DemiBold }
     }
-        Label { Layout.fillWidth: true; text: "点击按钮时才发送选中文字。API 用量由服务商计费。"; wrapMode: Text.Wrap; color: root.secondaryText }
+        Label { Layout.fillWidth: true; text: strings.t("ai.note"); wrapMode: Text.Wrap; color: root.secondaryText }
     RowLayout {
         id: tabs
         property int currentIndex: 0
         Layout.fillWidth: true
         spacing: Style.spacing.sm
-        ActionButton { Layout.fillWidth: true; text: "服务商与模型"; selected: tabs.currentIndex === 0; onClicked: tabs.currentIndex = 0 }
-        ActionButton { Layout.fillWidth: true; text: "提示词按钮"; selected: tabs.currentIndex === 1; onClicked: tabs.currentIndex = 1 }
+        ActionButton { Layout.fillWidth: true; text: strings.t("ai.tab.connections"); selected: tabs.currentIndex === 0; onClicked: tabs.currentIndex = 0 }
+        ActionButton { Layout.fillWidth: true; text: strings.t("ai.tab.buttons"); selected: tabs.currentIndex === 1; onClicked: tabs.currentIndex = 1 }
     }
         Flickable {
             id: scroll
@@ -140,8 +143,8 @@ ColumnLayout {
                     Layout.fillWidth: true
                     RowLayout {
                         Choice { Layout.fillWidth: true; model: root.draft.connections.map(function(c) { return c.name }); currentIndex: root.connectionIndex; onActivated: function(index) { root.connectionIndex = index } }
-                        ActionButton { text: "新增"; onClicked: root.add("connections") }
-                        ActionButton { text: "删除"; enabled: !!root.connection; onClicked: root.remove("connections") }
+                        ActionButton { text: strings.t("ai.add"); onClicked: root.add("connections") }
+                        ActionButton { text: strings.t("ai.delete"); enabled: !!root.connection; onClicked: root.remove("connections") }
                     }
                     GridLayout {
                         visible: !!root.connection
@@ -149,34 +152,34 @@ ColumnLayout {
                         columns: 2
                         columnSpacing: Style.spacing.lg
                         rowSpacing: Style.spacing.lg
-                        Label { text: "名称" }
+                        Label { text: strings.t("ai.name") }
                         Field { Layout.fillWidth: true; text: root.connection ? root.connection.name : ""; onTextEdited: root.change("connections", "name", text) }
-                        Label { text: "服务商" }
+                        Label { text: strings.t("ai.provider") }
                         Choice {
                             objectName: "aiProvider"
                             Layout.fillWidth: true
-                            model: ["DeepSeek", "OpenAI", "Claude", "Gemini", "兼容接口 / 本地模型"]
+                            model: ["DeepSeek", "OpenAI", "Claude", "Gemini", strings.t("ai.provider.compatible")]
                             currentIndex: root.connection ? root.providers.indexOf(root.connection.provider) : 0
                             onActivated: function(index) { root.change("connections", "provider", root.providers[index]); root.change("connections", "baseUrl", root.urls[index]); root.change("connections", "model", index === 0 ? "deepseek-flash" : "") }
                         }
-                        Label { text: "API Base URL" }
+                        Label { text: strings.t("ai.baseUrl") }
                         Field { Layout.fillWidth: true; text: root.connection ? root.connection.baseUrl : ""; onTextEdited: root.change("connections", "baseUrl", text) }
-                        Label { text: "模型名称" }
-                        Field { Layout.fillWidth: true; placeholderText: "填写服务商支持的模型 ID"; text: root.connection ? root.connection.model : ""; onTextEdited: root.change("connections", "model", text) }
-                        Label { text: "API Key" }
+                        Label { text: strings.t("ai.model") }
+                        Field { Layout.fillWidth: true; placeholderText: strings.t("ai.modelPlaceholder"); text: root.connection ? root.connection.model : ""; onTextEdited: root.change("connections", "model", text) }
+                        Label { text: strings.t("ai.apiKey") }
                         Field {
                             Layout.fillWidth: true
                             echoMode: TextInput.Password
-                            placeholderText: root.connection && root.connection.hasKey ? "已保存；留空保留，输入可替换" : "填写 API Key（本地模型可留空）"
+                            placeholderText: root.connection && root.connection.hasKey ? strings.t("ai.apiKeySaved") : strings.t("ai.apiKeyPlaceholder")
                             text: root.connection ? (root.keys[root.connection.id] || "") : ""
                             onTextEdited: { if (root.connection) { var k = Object.assign({}, root.keys); if (text) k[root.connection.id] = text; else delete k[root.connection.id]; root.keys = k } }
                         }
-                        Label { text: "输出 tokens 上限" }
+                        Label { text: strings.t("ai.maxTokens") }
                         Ui.NumberField { Layout.fillWidth: true; fieldWidth: width; from: 1; to: 65536; value: root.connection ? root.connection.maxTokens : 4096; onModified: function(next) { root.change("connections", "maxTokens", next) } }
                     }
                     ActionButton {
                         visible: !!root.connection
-                        text: root.connection && root.draft.defaultConnection === root.connection.id ? "当前默认连接" : "设为默认连接"
+                        text: root.connection && root.draft.defaultConnection === root.connection.id ? strings.t("ai.defaultConnection") : strings.t("ai.setDefault")
                         onClicked: { var next = Object.assign({}, root.draft); next.defaultConnection = root.connection.id; root.draft = next }
                     }
                 }
@@ -185,15 +188,15 @@ ColumnLayout {
                     Layout.fillWidth: true
                     RowLayout {
                         Choice { Layout.fillWidth: true; model: root.draft.buttons.map(function(b) { return b.title }); currentIndex: root.buttonIndex; onActivated: function(index) { root.buttonIndex = index } }
-                        ActionButton { text: "新增"; onClicked: root.add("buttons") }
-                        ActionButton { text: "删除"; enabled: !!root.action; onClicked: root.remove("buttons") }
+                        ActionButton { text: strings.t("ai.add"); onClicked: root.add("buttons") }
+                        ActionButton { text: strings.t("ai.delete"); enabled: !!root.action; onClicked: root.remove("buttons") }
                     }
                     RowLayout {
                         enabled: !!root.action
-                        ActionButton { text: "复制"; onClicked: { var next = JSON.parse(JSON.stringify(root.draft)); var b = Object.assign({}, root.action); b.id = "copy-" + Date.now(); b.title = b.title.slice(0, 35) + " 副本"; next.buttons.push(b); root.draft = next; root.buttonIndex = next.buttons.length - 1 } }
-                        ActionButton { text: "上移"; onClicked: root.move(-1) }
-                        ActionButton { text: "下移"; onClicked: root.move(1) }
-                        Ui.Toggle { Layout.fillWidth: true; label: "启用"; titleSize: Style.font.bodySmall; checked: root.action ? root.action.enabled : false; onClicked: root.change("buttons", "enabled", !checked) }
+                        ActionButton { text: strings.t("ai.copy"); onClicked: { var next = JSON.parse(JSON.stringify(root.draft)); var b = Object.assign({}, root.action); b.id = "copy-" + Date.now(); b.title = strings.t("ai.copySuffix").arg(b.title.slice(0, 35)); next.buttons.push(b); root.draft = next; root.buttonIndex = next.buttons.length - 1 } }
+                        ActionButton { text: strings.t("ai.moveUp"); onClicked: root.move(-1) }
+                        ActionButton { text: strings.t("ai.moveDown"); onClicked: root.move(1) }
+                        Ui.Toggle { Layout.fillWidth: true; label: strings.t("ai.enable"); titleSize: Style.font.bodySmall; checked: root.action ? root.action.enabled : false; onClicked: root.change("buttons", "enabled", !checked) }
                     }
                     GridLayout {
                         visible: !!root.action
@@ -201,23 +204,23 @@ ColumnLayout {
                         columns: 2
                         columnSpacing: Style.spacing.lg
                         rowSpacing: Style.spacing.lg
-                        Label { text: "按钮名称" }
+                        Label { text: strings.t("ai.buttonName") }
                         Field { Layout.fillWidth: true; text: root.action ? root.action.title : ""; onTextEdited: root.change("buttons", "title", text) }
-                        Label { text: "图标文字 / Emoji" }
+                        Label { text: strings.t("ai.icon") }
                         Field { Layout.fillWidth: true; maximumLength: 8; text: root.action ? root.action.icon : ""; onTextEdited: root.change("buttons", "icon", text) }
-                        Label { text: "AI 连接" }
+                        Label { text: strings.t("ai.connection") }
                         Choice {
                             Layout.fillWidth: true
-                            model: ["使用默认连接"].concat(root.draft.connections.map(function(c) { return c.name }))
+                            model: [strings.t("ai.useDefaultConnection")].concat(root.draft.connections.map(function(c) { return c.name }))
                             currentIndex: root.action ? root.draft.connections.map(function(c) { return c.id }).indexOf(root.action.connection) + 1 : 0
                             onActivated: function(index) { root.change("buttons", "connection", index ? root.draft.connections[index - 1].id : "") }
                         }
-                        Label { text: "显示位置" }
-                        Choice { Layout.fillWidth: true; model: ["工具栏", "AI 菜单"]; currentIndex: root.action && root.action.placement === "menu" ? 1 : 0; onActivated: function(index) { root.change("buttons", "placement", index ? "menu" : "toolbar") } }
-                        Label { text: "结果方式" }
-                        Choice { Layout.fillWidth: true; model: ["预览", "仅复制", "替换原文（校验选区）"]; currentIndex: root.action ? ["preview", "copy", "replace"].indexOf(root.action.output) : 0; onActivated: function(index) { root.change("buttons", "output", ["preview", "copy", "replace"][index]) } }
+                        Label { text: strings.t("ai.placement") }
+                        Choice { Layout.fillWidth: true; model: [strings.t("ai.toolbar"), strings.t("ai.menu")]; currentIndex: root.action && root.action.placement === "menu" ? 1 : 0; onActivated: function(index) { root.change("buttons", "placement", index ? "menu" : "toolbar") } }
+                        Label { text: strings.t("ai.output") }
+                        Choice { Layout.fillWidth: true; model: [strings.t("ai.output.preview"), strings.t("ai.output.copy"), strings.t("ai.output.replace")]; currentIndex: root.action ? ["preview", "copy", "replace"].indexOf(root.action.output) : 0; onActivated: function(index) { root.change("buttons", "output", ["preview", "copy", "replace"][index]) } }
                     }
-                    Label { text: "提示词 · {{text}} 表示选中文字" }
+                    Label { text: strings.t("ai.promptLabel") }
                     C.TextArea {
                         visible: !!root.action
                         Layout.fillWidth: true
@@ -241,12 +244,12 @@ ColumnLayout {
                 }
             }
         }
-        Label { Layout.fillWidth: true; text: root.ai ? root.ai.error : ""; color: text === "已保存。" ? root.secondaryText : Commons.Color.urgent; wrapMode: Text.Wrap; visible: text !== "" }
-        Label { Layout.fillWidth: true; text: "修改后点击保存。密钥单独保存在本机。"; wrapMode: Text.Wrap; color: root.secondaryText }
+        Label { Layout.fillWidth: true; text: root.ai ? root.ai.error : ""; color: text === strings.t("ai.saved") ? root.secondaryText : Commons.Color.urgent; wrapMode: Text.Wrap; visible: text !== "" }
+        Label { Layout.fillWidth: true; text: strings.t("ai.footer"); wrapMode: Text.Wrap; color: root.secondaryText }
         RowLayout {
             enabled: !!root.ai && !root.ai.saving
             Item { Layout.fillWidth: true }
-            ActionButton { objectName: "aiSave"; text: "保存"; onClicked: root.ai.save(root.draft, root.keys) }
+            ActionButton { objectName: "aiSave"; text: strings.t("ai.save"); onClicked: root.ai.save(root.draft, root.keys) }
 
         }
 }

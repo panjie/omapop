@@ -2,6 +2,7 @@ import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
 import vm from 'node:vm';
 import {test} from 'node:test';
+import {strings, argPolyfill} from './translations.mjs';
 const source = readFileSync(new URL('../AiService.qml', import.meta.url), 'utf8');
 const output = vm.createContext({});
 vm.runInContext(readFileSync(new URL('../OutputBuffer.js', import.meta.url), 'utf8').replace(/^\.pragma library\s*/, ''), output);
@@ -26,8 +27,10 @@ function harness() {
     pasteCombo(){return {mods:'CTRL',key:'v'}}, sendKeys(keys,address,done){pasted.push(address);done()},
   };
   const c = vm.createContext({host, helper:'/ai.py', config:{version:1,defaultConnection:'ds',connections:[{id:'ds',model:'model'}],buttons:[]},
+    strings,
     error:'',saving:false,running:false,active:false,contextValid:true,text:'',status:'',task:null,generation:0,session:null,button:null,selectionSerial:-1,
     flush:{running:false,start(){},stop(){}},settingsWindow:{visible:false}});
+  vm.runInContext(argPolyfill,c);
   vm.runInContext(code,c);
   return {c,host,calls,copied,pasted};
 }

@@ -4,6 +4,7 @@ import { readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import vm from "node:vm";
 import assert from "node:assert/strict";
+import { strings, argPolyfill } from "./translations.mjs";
 
 const source = readFileSync(new URL("../Service.qml", import.meta.url), "utf8");
 const actions = vm.createContext({});
@@ -51,6 +52,7 @@ function harness(autoComplete = true) {
   };
   const c = vm.createContext({
     Date: { now: () => now },
+    strings,
     popupContainsPoint() { return false; },
     aiService: {active: false, cancel() {}, buttons() { return []; }},
     ...pressState, selectionSerial: 0, lastPressSelectionSerial: 0,
@@ -83,6 +85,7 @@ function harness(autoComplete = true) {
     },
   });
   c.root = c;
+  vm.runInContext(argPolyfill, c);
   vm.runInContext(functions, c, { filename: fileURLToPath(new URL("../Service.qml", import.meta.url)) });
   const show = popup.present;
   popup.present = (...args) => {

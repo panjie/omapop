@@ -2,6 +2,7 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import vm from 'node:vm';
 import test from 'node:test';
+import { strings, argPolyfill } from './translations.mjs';
 
 const source = readFileSync(new URL('../Service.qml', import.meta.url), 'utf8');
 const names = ['runJavascriptAction','handleRunnerCall','setExtensionEnabled','setExtensionOption','extensionPreferences','setExtensionCommandKey','installFromDirectory','populateVerifiedModule'];
@@ -11,6 +12,7 @@ function harness() {
   let spec, exit, done = 0;
   const c = vm.createContext({
     current: { input: {text:'selection'}, context: {canPaste:true,clipboardText:'plain',windowAddress:'0x123'} },
+    strings,
     runtimeCommand: () => ['fake-runtime'], runnerRequest: () => '{}', parseJson: JSON.parse, busyTask:null, busy:false,
     popup: {showBusy(){}}, rearm: {restart(){}}, autoHide: {restart(){}}, commandKey:'super',
     Actions: {oneLine:String,extensionCommandKey:(global,local)=>local==='ctrl'||local==='super'?local:global,
@@ -26,6 +28,7 @@ function harness() {
     extensionDownloads:false,directoryInstalling:{},directoryStatus:'',
     populatedIds:{},moduleActions:{},readGeneration:3,tagModuleAction(){},
   });
+  vm.runInContext(argPolyfill, c);
   vm.runInContext(functions, c);
   return {c,events,pending,writes,start(){c.runJavascriptAction({ext:{dir:'/tmp/example',name:'Test',commandKey:'ctrl'},action:{},path:[0]}, {},()=>done++)},
     populate(selection){c.populateVerifiedModule({dir:'/tmp/example',identifier:'example',entitlements:['dynamic']},()=>done++,selection)},

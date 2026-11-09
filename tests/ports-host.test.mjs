@@ -2,18 +2,21 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import vm from 'node:vm';
 import {test} from 'node:test';
+import {strings, argPolyfill} from './translations.mjs';
 const source=fs.readFileSync(new URL('../Service.qml',import.meta.url),'utf8');
 const names=['runNativeAction','copyTypedText','handleConfirm','hidePopup','finishAction','handleRunnerCall'];
 const code=[...source.matchAll(/^    function (\w+)\([^]*?^    \}/gm)].filter(m=>names.includes(m[1])).map(m=>m[0]).join('\n');
 function harness() {
   const calls=[],results=[],prompts=[];
   const s=vm.createContext({current:{input:{text:'echo "selected"'},context:{}},busyTask:null,busy:false,nativeHelper:'/native.py',clipboardHelper:'/clipboard.py',pendingConfirm:null,
+    strings,
     popup:{visible:true,showBusy(){},showConfirm(...args){prompts.push(args)},dismiss(){this.visible=false},keyboardMode:false},
     spawn(spec,callback){calls.push({spec,callback});return {cancel(){}}},parseJson:JSON.parse,
     showResult(message){results.push(message)},scriptFailed(message){s.current.failed=true;results.push(message)},
     log(){}, aiService:{cancel(){}},
     Actions:{oneLine:(s,n)=>s.slice(0,n)},cancelSelection(){},luaCall(){},rearm:{restart(){}},
   });
+  vm.runInContext(argPolyfill,s);
   vm.runInContext(code,s);return {s,calls,results,prompts};
 }
 const allowed={ext:{entitlements:['native']},action:{}};

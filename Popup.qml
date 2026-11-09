@@ -13,6 +13,8 @@ import "Actions.js" as Actions
 PanelWindow {
     id: win
 
+    Commons.Translations { id: strings; directory: Qt.resolvedUrl("i18n") }
+
     property string fontFamily: Style.font.family
     property int anchorX: 0
     property int anchorY: 0
@@ -33,7 +35,7 @@ PanelWindow {
     property bool statusOk: true
     property string confirmText: ""
     property string confirmDetails: ""
-    property string confirmAccept: "Install"
+    property string confirmAccept: ""
     property string hoveredTitle: ""
     property real shownAt: 0
     property bool selectionUpdating: false
@@ -240,7 +242,7 @@ PanelWindow {
     function showConfirm(text, acceptLabel, details) {
         confirmText = Actions.oneLine(text, 200)
         confirmDetails = details ? String(details).slice(0, 131072) : ""
-        confirmAccept = acceptLabel || "Install"
+        confirmAccept = acceptLabel || strings.t("common.install")
         hoveredTitle = ""
         mode = "confirm"
     }
@@ -390,7 +392,7 @@ PanelWindow {
                     // Back button while inside a submenu.
                     ActionButton {
                         visible: win.stack.length > 0
-                        button: ({ title: "Back", glyph: "\u{F004D}", showAs: "icon", isBack: true })
+                        button: ({ title: strings.t("popup.back"), glyph: "\u{F004D}", showAs: "icon", isBack: true })
                         onActivated: function (btn, mods) { win.popSubmenu() }
                     }
 
@@ -439,32 +441,32 @@ PanelWindow {
                             spacing: Style.spacing.xs
                             ActionButton {
                                 visible: win.aiMode
-                                button: ({title: "复制", showAs: "text", textLabel: "复制"})
+                                button: ({title: strings.t("common.copy"), showAs: "text", textLabel: strings.t("common.copy")})
                                 onActivated: win.aiCopy()
                             }
                             ActionButton {
                                 visible: win.aiMode && win.aiCanReplace
-                                button: ({title: "替换", showAs: "text", textLabel: "替换"})
+                                button: ({title: strings.t("common.replace"), showAs: "text", textLabel: strings.t("common.replace")})
                                 onActivated: win.aiReplace()
                             }
                             ActionButton {
                                 visible: win.aiMode
-                                button: ({title: win.aiRunning ? "停止" : "重新生成", showAs: "text", textLabel: win.aiRunning ? "停止" : "重试"})
+                                button: ({title: win.aiRunning ? strings.t("common.stop") : strings.t("common.regenerate"), showAs: "text", textLabel: win.aiRunning ? strings.t("common.stop") : strings.t("common.retry")})
                                 onActivated: { if (win.aiRunning) win.aiStop(); else win.aiRetry() }
                             }
                             ActionButton {
                                 visible: win.aiMode
-                                button: ({title: "关闭", showAs: "text", textLabel: "关闭"})
+                                button: ({title: strings.t("common.close"), showAs: "text", textLabel: strings.t("common.close")})
                                 onActivated: win.keyDismiss()
                             }
                             ActionButton {
                                 visible: !win.aiMode
-                                button: ({ title: "Copy & close", showAs: "text", textLabel: "Copy & close", accent: !win.resultPreview })
+                                button: ({ title: strings.t("popup.copyClose"), showAs: "text", textLabel: strings.t("popup.copyClose"), accent: !win.resultPreview })
                                 onActivated: win.resultCopied()
                             }
                             ActionButton {
                                 visible: win.resultPreview && !win.aiMode
-                                button: ({ title: "Paste result", showAs: "text", textLabel: "Paste result", accent: true })
+                                button: ({ title: strings.t("popup.pasteResult"), showAs: "text", textLabel: strings.t("popup.pasteResult"), accent: true })
                                 onActivated: win.resultClicked()
                             }
                         }
@@ -537,11 +539,11 @@ PanelWindow {
                         height: win.buttonSize
                         spacing: Style.spacing.xs
                         ActionButton {
-                            button: ({ title: win.confirmAccept, showAs: "text", textLabel: win.confirmAccept, accent: true })
+                            button: ({ title: win.confirmAccept !== "" ? win.confirmAccept : strings.t("common.install"), showAs: "text", textLabel: win.confirmAccept !== "" ? win.confirmAccept : strings.t("common.install"), accent: true })
                             onActivated: win.confirmAccepted()
                         }
                         ActionButton {
-                            button: ({ title: "Cancel", showAs: "text", textLabel: "Cancel" })
+                            button: ({ title: strings.t("common.cancel"), showAs: "text", textLabel: strings.t("common.cancel") })
                             onActivated: win.confirmRejected()
                         }
                     }

@@ -10,35 +10,57 @@ import qs.Ui
 ColumnLayout {
     id: root
 
+    Commons.Translations { id: strings; directory: Qt.resolvedUrl("i18n") }
+
     property var service: null
     property string errorText: ""
     readonly property color secondaryText: Qt.rgba(Commons.Color.popups.text.r, Commons.Color.popups.text.g, Commons.Color.popups.text.b, 0.68)
     readonly property var groups: [
-        { title: "Selection", keys: ["longPress", "requireTerminalShift", "position", "shortcut", "excludedApps"] },
-        { title: "Search", keys: ["searchEngine", "searchUrl"] },
-        { title: "General", keys: ["showBarIcon", "extensionDownloads", "directoryRefresh"] },
-        { title: "Advanced", keys: ["dragThreshold", "hideDistance", "maxSelectionKiB", "accessibilityProbe", "assumeEditable", "terminalClasses", "commandKey"] }
+        { title: "settings.group.selection", keys: ["longPress", "requireTerminalShift", "position", "shortcut", "excludedApps"] },
+        { title: "settings.group.search", keys: ["searchEngine", "searchUrl"] },
+        { title: "settings.group.general", keys: ["showBarIcon", "extensionDownloads", "directoryRefresh"] },
+        { title: "settings.group.advanced", keys: ["dragThreshold", "hideDistance", "maxSelectionKiB", "accessibilityProbe", "assumeEditable", "terminalClasses", "commandKey"] }
     ]
     readonly property var labels: ({
-        position: "Popup position", showBarIcon: "Show bar icon",
-        directoryRefresh: "Update extension catalogue", dragThreshold: "Selection drag distance (px)",
-        hideDistance: "Dismissal distance (px)", maxSelectionKiB: "Maximum selection size (KiB)",
-        accessibilityProbe: "Detect editable fields", assumeEditable: "Assume fields are editable",
-        terminalClasses: "Terminal apps", commandKey: "Extension Command key"
+        longPress: "settings.label.longPress", requireTerminalShift: "settings.label.requireTerminalShift",
+        position: "settings.label.position", shortcut: "settings.label.shortcut",
+        excludedApps: "settings.label.excludedApps", searchEngine: "settings.label.searchEngine",
+        searchUrl: "settings.label.searchUrl", showBarIcon: "settings.label.showBarIcon",
+        extensionDownloads: "settings.label.extensionDownloads", directoryRefresh: "settings.label.directoryRefresh",
+        dragThreshold: "settings.label.dragThreshold", hideDistance: "settings.label.hideDistance",
+        maxSelectionKiB: "settings.label.maxSelectionKiB", accessibilityProbe: "settings.label.accessibilityProbe",
+        assumeEditable: "settings.label.assumeEditable", terminalClasses: "settings.label.terminalClasses",
+        commandKey: "settings.label.commandKey"
     })
     readonly property var descriptions: ({
-        longPress: "Hold the left mouse button for half a second to offer Paste, even without a selection or field detection. No Shift is needed in terminals.",
-        requireTerminalShift: "Hold Shift throughout selection in terminal windows, including plain shell prompts. Avoids stale popups from Herdr, tmux and other terminal apps that copy and clear their selection. Long press and the keyboard shortcut still work.",
-        position: "Auto places the bar above or below the pointer to leave your selection visible.",
-        shortcut: "Record a key combination to open the action bar. Clear it to disable.",
-        excludedApps: "Omapop stays hidden in these apps. Choose a running window to ignore its whole application.",
-        showBarIcon: "Keep Omapop in the bar for quick access to extensions and settings.",
-        directoryRefresh: "Refresh the published listing weekly. This cannot change approved packages or versions.",
-        accessibilityProbe: "Detect whether the focused field accepts text before offering Paste or actions that replace text. Browsers may need a restart.",
-        assumeEditable: "Offer editing actions when Omapop cannot tell whether a field accepts text.",
-        terminalClasses: "Window classes separated by commas. These apps paste with Ctrl+Shift+V and cannot cut.",
-        commandKey: "Choose the Linux key used by extensions written for the macOS Command key."
+        longPress: "settings.desc.longPress",
+        requireTerminalShift: "settings.desc.requireTerminalShift",
+        position: "settings.desc.position",
+        shortcut: "settings.desc.shortcut",
+        excludedApps: "settings.desc.excludedApps",
+        searchEngine: "settings.desc.searchEngine",
+        searchUrl: "settings.desc.searchUrl",
+        showBarIcon: "settings.desc.showBarIcon",
+        extensionDownloads: "settings.desc.extensionDownloads",
+        directoryRefresh: "settings.desc.directoryRefresh",
+        dragThreshold: "settings.desc.dragThreshold",
+        hideDistance: "settings.desc.hideDistance",
+        maxSelectionKiB: "settings.desc.maxSelectionKiB",
+        accessibilityProbe: "settings.desc.accessibilityProbe",
+        assumeEditable: "settings.desc.assumeEditable",
+        terminalClasses: "settings.desc.terminalClasses",
+        commandKey: "settings.desc.commandKey"
     })
+
+    // Enum values are stored in English but shown in the shell's language.
+    function optionLabel(field, value) {
+        return strings.t("option." + value, value)
+    }
+    function optionList(field) {
+        return field && field.options ? field.options.map(function (value) {
+            return { value: value, label: root.optionLabel(field, value) }
+        }) : []
+    }
 
     signal backRequested()
     signal aiSettingsRequested()
@@ -98,15 +120,15 @@ ColumnLayout {
         Button {
             id: backButton
             objectName: "settingsBack"
-            text: "Back"
+            text: strings.t("common.back")
             iconText: "\u{F004D}"
             focusable: true
-            tooltipText: "Back to extensions"
+            tooltipText: strings.t("settings.backTooltip")
             onClicked: root.goBack()
         }
         Text {
             Layout.fillWidth: true
-            text: "Omapop settings"
+            text: strings.t("settings.title")
             textFormat: Text.PlainText
             color: Commons.Color.popups.text
             font.family: Style.font.family
@@ -117,12 +139,12 @@ ColumnLayout {
 
     Button {
         objectName: "aiSettingsButton"
-        text: "配置 AI 服务商与提示词 →"
+        text: strings.t("settings.aiButton")
         Layout.fillWidth: true
         bordered: true
         focusable: true
         leftAlign: true
-        tooltipText: "配置 DeepSeek 等连接和提示词按钮"
+        tooltipText: strings.t("settings.aiTooltip")
         onClicked: { root.finishEditing(); root.aiSettingsRequested() }
     }
 
@@ -155,7 +177,7 @@ ColumnLayout {
                     spacing: Style.spacing.huge
                     Text {
                         Layout.fillWidth: true
-                        text: section.modelData.title
+                        text: strings.t(section.modelData.title)
                         textFormat: Text.PlainText
                         color: root.secondaryText
                         font.family: Style.font.family
@@ -176,7 +198,7 @@ ColumnLayout {
 
     Text {
         Layout.fillWidth: true
-        text: root.errorText || "Changes save automatically."
+        text: root.errorText || strings.t("settings.autosave")
         textFormat: Text.PlainText
         wrapMode: Text.WordWrap
         color: root.errorText ? Commons.Color.urgent : root.secondaryText
@@ -190,8 +212,8 @@ ColumnLayout {
         readonly property var currentValue: root.value(field)
         readonly property string key: field ? field.key : ""
         readonly property string kind: field ? field.type : ""
-        readonly property string title: root.labels[key] || (field ? field.label : "")
-        readonly property string description: root.descriptions[key] || (field ? field.description : "")
+        readonly property string title: root.labels[key] ? strings.t(root.labels[key]) : (field ? field.label : "")
+        readonly property string description: root.descriptions[key] ? strings.t(root.descriptions[key]) : (field ? field.description : "")
 
         Layout.fillWidth: true
         visible: !!field && (key !== "searchUrl" || root.value(root.definition("searchEngine")) === "other")
@@ -253,7 +275,7 @@ ColumnLayout {
             Layout.fillWidth: true
             visible: row.kind === "enum"
             showLabel: false
-            options: row.field && row.field.options ? row.field.options : []
+            options: root.optionList(row.field)
             value: typeof row.currentValue === "string" ? row.currentValue : ""
             onChanged: function (next) { root.save(row.field, next) }
         }

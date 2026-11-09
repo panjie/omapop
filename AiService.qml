@@ -1,8 +1,12 @@
 import QtQuick
+import qs.Commons as Commons
 
 Item {
     id: root
     required property var host
+
+    Commons.Translations { id: strings; directory: Qt.resolvedUrl("i18n") }
+
     property var config: ({version: 1, defaultConnection: "", connections: [], buttons: []})
     property string error: ""
     property bool saving: false
@@ -29,8 +33,8 @@ Item {
             var reply = host.parseJson(result.stdout, 1048576)
             if (result.ok && reply && reply.type === "config") {
                 config = reply.config
-                error = action === "load" ? "" : "已保存。"
-            } else error = reply && reply.message ? reply.message : "AI 配置操作失败。"
+                error = action === "load" ? "" : strings.t("ai.status.saved")
+            } else error = reply && reply.message ? reply.message : strings.t("ai.status.operationFailed")
         })
     }
     function save(next, keys) { settingsAction("save", {config: next, keys: keys}) }
@@ -38,7 +42,7 @@ Item {
     function openSettings() { host.openAiSettings() }
     function buttons(input) {
         if (!input.text || !input.text.trim()) return []
-        if (!config.connections.length) return [{id: "ai.setup", title: "配置 AI", textLabel: "AI", showAs: "text", aiSetup: true}]
+        if (!config.connections.length) return [{id: "ai.setup", title: strings.t("ai.setupButtonTitle"), textLabel: "AI", showAs: "text", aiSetup: true}]
         var direct = [], menu = []
         config.buttons.forEach(function(b) {
             if (!b.enabled) return
@@ -46,7 +50,7 @@ Item {
             if (b.placement === "menu") menu.push(item)
             else direct.push(item)
         })
-        if (menu.length) direct.push({id: "ai.menu", title: "AI", textLabel: "AI…", showAs: "text", submenu: menu, isFolder: true})
+        if (menu.length) direct.push({id: "ai.menu", title: strings.t("ai.menuButtonTitle"), textLabel: "AI…", showAs: "text", submenu: menu, isFolder: true})
         return direct
     }
     function cancel(close) {
@@ -56,7 +60,7 @@ Item {
         running = false
         host.busy = false
         if (close) { active = false; session = null }
-        else { status = "已停止 · 结果可能不完整"; host.updateAiResult() }
+        else { status = strings.t("ai.status.stopped"); host.updateAiResult() }
     }
     function run(action) {
         cancel(true)
@@ -71,7 +75,8 @@ Item {
         text = ""
         var cid = button.connection || config.defaultConnection
         var connection = config.connections.find(function(c) { return c.id === cid })
-        status = button.title + (connection ? " · " + connection.model : "") + " · 正在生成…"
+        var prefix = button.title + (connection ? " · " + connection.model : "")
+        status = strings.t("ai.status.generating").arg(prefix)
         host.beginAiResult()
         var token = generation
         var completed = false
@@ -84,7 +89,7 @@ Item {
                 if (!event) return
                 if (event.type === "delta") text += event.text || ""
                 else if (event.type === "done") completed = true
-                else if (event.type === "error") { failed = true; status = event.message + (text ? " · 结果不完整" : "") }
+                else if (event.type === "error") { failed = true; status = text ? strings.t("ai.status.partial").arg(event.message) : event.message }
                 if (!flush.running) flush.start()
             }
         }, function(result) {
@@ -94,17 +99,17 @@ Item {
             host.busy = false
             flush.stop()
             if (result.ok && completed && !failed) {
-                status = button.title + (connection ? " · " + connection.model : "")
+                status = prefix
                 host.updateAiResult()
                 if (button.output === "copy") copy()
                 else if (button.output === "replace") replace()
             } else {
                 if (!failed) {
-                    if (result.failedToStart) status = "AI 请求进程无法启动，请检查 Python 安装。"
-                    else if (result.timedOut) status = "请求超时 · 结果不完整"
-                    else if (result.truncated) status = "响应超过大小上限 · 结果不完整"
-                    else if (!result.ok) status = "AI 请求进程异常退出，请重试。"
-                    else status = "未收到服务完成标记 · 结果不完整"
+                    if (result.failedToStart) status = strings.t("ai.status.noProcess")
+                    else if (result.timedOut) status = strings.t("ai.status.timeout")
+                    else if (result.truncated) status = strings.t("ai.status.tooLarge")
+                    else if (!result.ok) status = strings.t("ai.status.exited")
+                    else status = strings.t("ai.status.noDone")
                 }
                 host.updateAiResult()
             }
@@ -116,7 +121,7 @@ Item {
         var token = generation
         host.copyText(text, function(ok) {
             if (token !== generation) return
-            status = ok ? "已复制" : "复制失败"
+            status = ok ? strings.t("ai.status.copied") : strings.t("ai.status.copyFailed")
             host.updateAiResult()
         })
     }
@@ -125,7 +130,7 @@ Item {
         var token = generation
         var original = session
         var valid = function() { return contextValid && token === generation && original === host.current && selectionSerial === host.selectionSerial }
-        var reject = function() { if (token === generation) { status = "无法确认原选区，请复制结果后手动粘贴。"; host.updateAiResult() } }
+        var reject = function() { if (token === generation) { status = strings.t("ai.status.replaceRejected"); host.updateAiResult() } }
         if (!original.context.canReplace || original.context.terminal || !valid()) { reject(); return }
         host.spawn({command: ["/usr/bin/hyprctl", "-j", "activewindow"], limit: 65536, deadline: 5000}, function(result) {
             var win = host.parseJson(result.stdout, 65536)
@@ -139,7 +144,7 @@ Item {
                     host.copyText(text, function(ok) {
                         if (!ok || !valid()) { reject(); return }
                         host.sendKeys([host.pasteCombo(original.context)], original.context.windowAddress, function() {
-                            if (token === generation) { status = "已替换"; host.updateAiResult() }
+                            if (token === generation) { status = strings.t("ai.status.replaced"); host.updateAiResult() }
                         })
                     })
                 })

@@ -13,6 +13,9 @@ import "Actions.js" as Actions
 Panel {
     id: root
     moduleName: "io.github.jondkinney.omapop"
+
+    Commons.Translations { id: strings; directory: Qt.resolvedUrl("i18n") }
+
     // The service owns the plugin's IPC target; one widget per monitor would
     // otherwise register competing handlers.
     manageIpc: false
@@ -129,8 +132,8 @@ Panel {
             }
         }
         foreground: root.paused || !root.engineReady ? Qt.darker(root.barForeground, 1.55) : root.barForeground
-        tooltipText: (root.paused ? "Omapop is paused" : root.engineReady ? "Omapop: select text to act on it" : "Omapop: waiting for Hyprland")
-            + "\nClick for extensions and settings, right click to " + (root.paused ? "resume" : "pause")
+        tooltipText: strings.t(root.paused ? "bar.tooltip.paused" : root.engineReady ? "bar.tooltip.ready" : "bar.tooltip.waiting")
+            + "\n" + strings.t("bar.tooltip.hint").arg(strings.t(root.paused ? "bar.action.resume" : "bar.action.pause"))
         onPressed: function (button) {
             if (button === Qt.LeftButton)
                 root.toggle()
@@ -181,9 +184,9 @@ Panel {
                 Button {
                     iconText: "\u{F0493}"
                     focusable: true
-                    tooltipText: "Settings"
+                    tooltipText: strings.t("common.settings")
                     Accessible.role: Accessible.Button
-                    Accessible.name: "Settings"
+                    Accessible.name: strings.t("common.settings")
                     enabled: !!root.service
                     onClicked: root.openSettings()
                 }
@@ -191,10 +194,10 @@ Panel {
 
             Toggle {
                 Layout.fillWidth: true
-                label: "Enabled"
-                description: root.paused ? "Paused. Turn on to bring back the action bar."
-                    : root.engineReady ? "Select text with the mouse to show the action bar."
-                    : "Connecting to Hyprland."
+                label: strings.t("bar.enabled")
+                description: root.paused ? strings.t("bar.enabled.paused")
+                    : root.engineReady ? strings.t("bar.enabled.ready")
+                    : strings.t("bar.enabled.connecting")
                 titleSize: Style.font.bodySmall
                 fontFamily: root.fontFamily
                 foreground: Commons.Color.popups.text
@@ -220,7 +223,7 @@ Panel {
             Text {
                 Layout.fillWidth: true
                 visible: !!(root.service && root.service.runtimeProbed && root.service.runtimeName === "")
-                text: "No JavaScript runtime found. Install deno (or nodejs) to run JavaScript extensions; every other kind still works."
+                text: strings.t("bar.runtimeMissing")
                 textFormat: Text.PlainText
                 wrapMode: Text.WordWrap
                 color: Commons.Color.urgent
@@ -229,14 +232,14 @@ Panel {
             }
 
             SectionHeading {
-                title: "Installed extensions"
+                title: strings.t("bar.installed")
                 count: root.extensions.length
             }
 
             Text {
                 Layout.fillWidth: true
                 visible: root.extensions.length === 0
-                text: "Nothing installed yet. Pick one from Available extensions below, or select a #popclip snippet anywhere and click Install."
+                text: strings.t("bar.empty")
                 textFormat: Text.PlainText
                 wrapMode: Text.WordWrap
                 color: root.secondaryText
@@ -302,13 +305,13 @@ Panel {
                                 visible: text !== ""
                                 text: {
                                     if (modelData.error)
-                                        return "Error: " + Actions.oneLine(modelData.error, 400)
+                                        return strings.t("bar.error").arg(Actions.oneLine(modelData.error, 400))
                                     var note = root.sentence(modelData.platformNote)
                                     if (modelData.usable === false)
-                                        return Actions.oneLine(note || "Cannot run here", 400)
-                                    var description = modelData.description || (modelData.source === "bundled" ? "Bundled example" : "")
+                                        return Actions.oneLine(note || strings.t("bar.cannotRun"), 400)
+                                    var description = modelData.description || (modelData.source === "bundled" ? strings.t("bar.bundledExample") : "")
                                     if (modelData.trustStatus === "manual")
-                                        description = "Local extension: outside the reviewed catalog. Enable only after reviewing its code. " + description
+                                        description = strings.t("bar.localExtension").arg(description)
                                     return Actions.oneLine(note ? (description ? description + " " : "") + note + "." : description, 400)
                                 }
                                 textFormat: Text.PlainText
@@ -323,7 +326,7 @@ Panel {
                             Layout.alignment: Qt.AlignVCenter
                             visible: true
                             iconText: root.expandedId === modelData.identifier ? "\u{F0143}" : "\u{F0493}"
-                            tooltipText: "Settings"
+                            tooltipText: strings.t("common.settings")
                             onClicked: root.expandedId = root.expandedId === modelData.identifier ? "" : modelData.identifier
                         }
 
@@ -344,8 +347,8 @@ Panel {
 
                         Dropdown {
                             Layout.fillWidth: true
-                            label: "Command key"
-                            options: [{ value: "inherit", label: "Use global setting" }, { value: "ctrl", label: "Ctrl" }, { value: "super", label: "Super" }]
+                            label: strings.t("bar.commandKey")
+                            options: [{ value: "inherit", label: strings.t("bar.useGlobal") }, { value: "ctrl", label: strings.t("option.ctrl") }, { value: "super", label: strings.t("option.super") }]
                             value: extRow.modelData.commandKey || "inherit"
                             onChanged: function (next) {
                                 if (root.service) root.service.setExtensionCommandKey(extRow.modelData.identifier, next)
@@ -353,8 +356,8 @@ Panel {
                         }
                         Text {
                             Layout.fillWidth: true
-                            text: "Inherit uses Omapop's global setting."
-                                  + (extRow.modelData.recommendedCommandKey === "ctrl" ? " This extension uses ordinary app shortcuts; Ctrl is recommended." : "")
+                            text: strings.t("bar.inherit")
+                                  + (extRow.modelData.recommendedCommandKey === "ctrl" ? strings.t("bar.recommendedCtrl") : "")
                             textFormat: Text.PlainText
                             wrapMode: Text.WordWrap
                             color: root.secondaryText
@@ -410,7 +413,7 @@ Panel {
                                         var values = modelData.values || []
                                         var labels = modelData.valueLabels || []
                                         if (modelData.allowNone)
-                                            list.push({ value: "", label: "None" })
+                                            list.push({ value: "", label: strings.t("common.none") })
                                         for (var i = 0; i < values.length; i++)
                                             list.push({ value: values[i], label: labels[i] || values[i] })
                                         return list
@@ -424,7 +427,7 @@ Panel {
                                     visible: modelData.type === "string" || modelData.type === "secret" || modelData.type === "password"
                                     password: modelData.type === "secret" || modelData.type === "password"
                                     text: String(currentValue === undefined || currentValue === null ? "" : currentValue)
-                                    placeholderText: modelData.type === "secret" ? "Secret" : ""
+                                    placeholderText: modelData.type === "secret" ? strings.t("common.secret") : ""
                                     onEditingFinished: if (root.service && text !== String(currentValue === undefined ? "" : currentValue)) root.service.setExtensionOption(ext.identifier, modelData.identifier, text)
                                 }
                             }
@@ -438,7 +441,7 @@ Panel {
             // Browse and install published extensions. The service shells out
             // to bin/omapop-directory.py; this only renders what comes back.
             SectionHeading {
-                title: "Available extensions"
+                title: strings.t("bar.available")
                 count: root.service ? root.service.directoryTotal : -1
             }
 
@@ -454,17 +457,17 @@ Panel {
                 TextField {
                     id: searchField
                     Layout.fillWidth: true
-                    placeholderText: "Search extensions"
+                    placeholderText: strings.t("bar.searchPlaceholder")
                     onTextChanged: searchDebounce.restart()
                 }
                 Button {
-                    text: "Update"
-                    tooltipText: "Re-fetch the catalogue from the directory"
+                    text: strings.t("common.update")
+                    tooltipText: strings.t("bar.updateTooltip")
                     onClicked: if (root.service) root.service.refreshDirectory(0)
                 }
                 PanelActionButton {
                     iconText: "\u{F03CC}"
-                    tooltipText: "Open the extension directory in a browser"
+                    tooltipText: strings.t("bar.openDirectoryTooltip")
                     onClicked: if (root.service) root.service.openDirectoryPage("https://www.popclip.app/extensions/")
                 }
             }
@@ -483,15 +486,15 @@ Panel {
                         if (root.service.directoryStatus !== "")
                             return root.service.directoryStatus
                         if (root.service.directoryBusy)
-                            return "Loading catalogue\u2026"
+                            return strings.t("bar.loadingCatalogue")
                         if (root.service.directoryTotal > 0) {
-                            var s = root.service.directoryResults.length + " shown"
+                            var s = strings.t("bar.shown").arg(root.service.directoryResults.length)
                             if (root.service.directoryShowMac)
-                                s += " \u00b7 unapproved included"
+                                s += strings.t("bar.unapprovedIncluded")
                             else if (root.service.directoryHidden > 0)
-                                s += " \u00b7 " + root.service.directoryHidden + " unapproved hidden"
+                                s += strings.t("bar.unapprovedHidden").arg(root.service.directoryHidden)
                             if (root.service.directoryClassifying)
-                                s += " \u00b7 checking which need macOS\u2026"
+                                s += strings.t("bar.checkingMac")
                             return s
                         }
                         return ""
@@ -509,8 +512,8 @@ Panel {
                     id: macToggle
                     Layout.alignment: Qt.AlignVCenter
                     visible: !!(root.service && (root.service.directoryShowMac || root.service.directoryHidden > 0))
-                    text: root.service && root.service.directoryShowMac ? "Hide unapproved" : "Show unapproved"
-                    tooltipText: "Only reviewed versions can be installed from the directory"
+                    text: root.service && root.service.directoryShowMac ? strings.t("bar.hideUnapproved") : strings.t("bar.showUnapproved")
+                    tooltipText: strings.t("bar.unapprovedTooltip")
                     onClicked: if (root.service) root.service.setDirectoryShowMac(!root.service.directoryShowMac)
                 }
             }
@@ -564,8 +567,8 @@ Panel {
                             Text {
                                 Layout.fillWidth: true
                                 visible: text !== ""
-                                text: (modelData.approved ? (modelData.isPort ? "Omapop Linux port v" : "Reviewed v") + modelData.version + ". " : "Not approved for installation. ")
-                                      + (modelData.needsMac ? "Needs macOS. " : "") + modelData.description
+                                text: (modelData.approved ? (modelData.isPort ? strings.t("bar.linuxPortVersion").arg(modelData.version) : strings.t("bar.reviewedVersion").arg(modelData.version)) : strings.t("bar.notApproved"))
+                                      + (modelData.needsMac ? strings.t("bar.needsMac") : "") + modelData.description
                                 textFormat: Text.PlainText
                                 wrapMode: Text.WordWrap
                 color: root.secondaryText
@@ -578,16 +581,16 @@ Panel {
                             Layout.alignment: Qt.AlignVCenter
                             visible: modelData.page !== ""
                             iconText: "\u{F03CC}"
-                            tooltipText: "Open this extension's page on popclip.app"
+                            tooltipText: strings.t("bar.openPageTooltip")
                             onClicked: if (root.service) root.service.openDirectoryPage(modelData.page)
                         }
 
                         Button {
                             Layout.alignment: Qt.AlignVCenter
-                            text: dirRow.installing ? "\u2026" : root.confirmInstallId === modelData.shortcode ? "Confirm install" : "Install"
+                            text: dirRow.installing ? "\u2026" : root.confirmInstallId === modelData.shortcode ? strings.t("bar.confirmInstall") : strings.t("common.install")
                             enabled: !dirRow.installing && modelData.approved && !!(root.service && root.service.extensionDownloads)
-                            tooltipText: root.service && !root.service.extensionDownloads ? "Enable extension downloads in Settings"
-                                         : "Download this reviewed version. Enable it separately after installation."
+                            tooltipText: root.service && !root.service.extensionDownloads ? strings.t("bar.enableDownloads")
+                                         : strings.t("bar.installTooltip")
                             onClicked: {
                                 if (root.confirmInstallId !== modelData.shortcode) {
                                     root.confirmInstallId = modelData.shortcode
@@ -600,7 +603,7 @@ Panel {
                         PanelActionButton {
                             visible: root.confirmInstallId === modelData.shortcode
                             iconText: "\u{F0156}"
-                            tooltipText: "Cancel installation"
+                            tooltipText: strings.t("bar.cancelInstall")
                             onClicked: root.confirmInstallId = ""
                         }
                     }
@@ -616,13 +619,13 @@ Panel {
                 Layout.topMargin: Style.spacing.sm
                 spacing: Style.spacing.md
                 Button {
-                    text: "Reload"
-                    tooltipText: "Rescan the extensions folder"
+                    text: strings.t("common.reload")
+                    tooltipText: strings.t("bar.reloadTooltip")
                     onClicked: if (root.service) root.service.rescanExtensions()
                 }
                 Button {
-                    text: "Open folder"
-                    tooltipText: "Open ~/.config/omapop/extensions"
+                    text: strings.t("common.openFolder")
+                    tooltipText: strings.t("bar.openFolderTooltip")
                     onClicked: if (root.service) root.service.openExtensionsFolder()
                 }
             }
@@ -630,7 +633,7 @@ Panel {
             Text {
                 Layout.fillWidth: true
                 visible: !!(root.service && root.service.runtimeName)
-                text: root.service ? "JavaScript extensions run under " + root.service.runtimeName + "." : ""
+                text: root.service ? strings.t("bar.runtimeFooter").arg(root.service.runtimeName) : ""
                 textFormat: Text.PlainText
                 wrapMode: Text.WordWrap
                 color: Qt.darker(Commons.Color.popups.text, 1.6)
