@@ -17,10 +17,21 @@ Lua engine, because the compositor is the only thing on Wayland that sees mouse
 button releases and the pointer. No native code, no daemon, no packages to
 build.
 
+## Main changes in this fork
+
+- **[Built-in AI text actions](#built-in-ai-text-actions)**: process selected
+  text with DeepSeek, OpenAI, Claude, Gemini or compatible APIs without installing
+  a separate extension or AI SDK. Configure providers and reusable prompt buttons,
+  then stream responses into a preview with copy, stop/retry and replace actions.
+- **[Markdown and multi-line result popups](#result-display)**: read AI responses
+  and extension output in a themed, scrollable card with headings, lists, tables
+  and fenced code blocks. Long and multi-line results support keyboard scrolling,
+  copying and, for previews, pasting back into the original application.
+
 ## Install
 
 ```bash
-omarchy plugin add https://github.com/jondkinney/omapop.git
+omarchy plugin add https://github.com/panjie/omapop.git
 omarchy plugin enable io.github.jondkinney.omapop
 ```
 
