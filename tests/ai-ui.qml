@@ -89,4 +89,36 @@ TestCase {
         if (captureDir) grabImage(canvas).save(captureDir + "/ai-buttons.png")
         settings.visible = false
     }
+    function test_prompt_scrolls_to_cursor() {
+        settings.visible = true
+        settings.tabIndex = 1
+        settings.add("buttons")
+        var editor = findChild(settings, "aiPrompt")
+        var scroll = findChild(settings, "aiFormScroll")
+        editor.forceActiveFocus()
+        editor.selectAll()
+        keyClick(Qt.Key_Backspace)
+        for (var i = 0; i < 40; ++i) {
+            keyClick(Qt.Key_A)
+            keyClick(Qt.Key_Return)
+        }
+        function cursorIsVisible() {
+            var cursor = editor.mapToItem(scroll, editor.cursorRectangle.x, editor.cursorRectangle.y)
+            return cursor.y >= 0 && cursor.y + editor.cursorRectangle.height <= scroll.height
+        }
+        tryVerify(cursorIsVisible)
+        verify(scroll.contentY > 0)
+        compare(settings.action.prompt, editor.text)
+        keyClick(Qt.Key_Home, Qt.ControlModifier)
+        tryVerify(cursorIsVisible)
+        keyClick(Qt.Key_End, Qt.ControlModifier)
+        tryVerify(cursorIsVisible)
+        // A pasted paragraph also grows through wrapping, without explicit newlines.
+        editor.remove(0, editor.length)
+        editor.insert(0, new Array(150).join("多行提示词自动换行 "))
+        editor.cursorPosition = editor.length
+        tryVerify(cursorIsVisible)
+        compare(settings.action.prompt, editor.text)
+        settings.visible = false
+    }
 }

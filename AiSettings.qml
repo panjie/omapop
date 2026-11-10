@@ -125,6 +125,7 @@ ColumnLayout {
     }
         Flickable {
             id: scroll
+            objectName: "aiFormScroll"
             Layout.fillWidth: true
             Layout.fillHeight: true
             Layout.preferredHeight: Style.space(460)
@@ -222,9 +223,25 @@ ColumnLayout {
                     }
                     Label { text: strings.t("ai.promptLabel") }
                     C.TextArea {
+                        id: promptEditor
+                        objectName: "aiPrompt"
                         visible: !!root.action
                         Layout.fillWidth: true
-                        Layout.preferredHeight: Style.space(170)
+                        Layout.preferredHeight: Math.max(Style.space(170), implicitHeight)
+                        // Use the form's scrollbar, and follow the caret after layout settles.
+                        function revealCursor() {
+                            if (!activeFocus || !visible) return
+                            var cursor = mapToItem(scroll.contentItem, cursorRectangle.x, cursorRectangle.y)
+                            var margin = padding
+                            var bottom = cursor.y + cursorRectangle.height + margin
+                            var next = scroll.contentY
+                            if (bottom > next + scroll.height) next = bottom - scroll.height
+                            if (cursor.y - margin < next) next = cursor.y - margin
+                            scroll.contentY = Math.max(0, Math.min(next, scroll.contentHeight - scroll.height))
+                        }
+                        onCursorRectangleChanged: Qt.callLater(revealCursor)
+                        onActiveFocusChanged: if (activeFocus) Qt.callLater(revealCursor)
+                        onHeightChanged: Qt.callLater(revealCursor)
                         font.family: Style.font.family
                         font.pixelSize: Style.font.body
                         color: root.foreground
