@@ -18,7 +18,6 @@
   "common.settings": "設定",
   "common.stop": "停止",
   "common.update": "更新",
-
   "bar.tooltip.paused": "Omapop 已暫停",
   "bar.tooltip.ready": "Omapop：選中文字即可操作",
   "bar.tooltip.waiting": "Omapop：正在等待 Hyprland",
@@ -64,7 +63,6 @@
   "bar.reloadTooltip": "重新掃描擴充套件資料夾",
   "bar.openFolderTooltip": "開啟 ~/.config/omapop/extensions",
   "bar.runtimeFooter": "JavaScript 擴充套件運行於 %1。",
-
   "settings.title": "Omapop 設定",
   "settings.backTooltip": "返回擴充套件列表",
   "settings.aiButton": "配置 AI 服務商與提示詞 →",
@@ -108,7 +106,6 @@
   "settings.desc.assumeEditable": "當 Omapop 無法判斷欄位是否接受文本時，仍提供編輯動作。",
   "settings.desc.terminalClasses": "以逗號分隔的視窗類。這些應用使用 Ctrl+Shift+V 貼上，且無法剪下。",
   "settings.desc.commandKey": "選擇用於為 macOS Command 鍵編寫的擴充套件的 Linux 按鍵。",
-
   "option.auto": "自動",
   "option.above": "上方",
   "option.below": "下方",
@@ -126,7 +123,6 @@
   "option.yandex": "Yandex",
   "option.baidu": "百度",
   "option.naver": "Naver",
-
   "ai.title": "AI 文本處理",
   "ai.note": "點選按鈕時才傳送選中文字。API 用量由服務商計費。",
   "ai.tab.connections": "服務商與模型",
@@ -168,7 +164,6 @@
   "ai.newButton": "新按鈕",
   "ai.newPrompt": "請處理以下文字：\n\n{{text}}",
   "ai.save": "儲存",
-
   "ai.setupButtonTitle": "配置 AI",
   "ai.menuButtonTitle": "AI",
   "ai.status.saved": "已儲存。",
@@ -185,7 +180,6 @@
   "ai.status.copyFailed": "複製失敗",
   "ai.status.replaced": "已替換",
   "ai.status.replaceRejected": "無法確認原選區，請複製結果後手動貼上。",
-
   "action.cut": "剪下",
   "action.copy": "複製",
   "action.paste": "貼上",
@@ -196,7 +190,6 @@
   "action.install": "安裝擴充套件",
   "action.installNamed": "安裝擴充套件“%1”",
   "action.more": "更多",
-
   "service.setting.unknown": "未知設定。",
   "service.setting.boolean": "請選擇開或關。",
   "service.setting.integer": "請輸入 %1 到 %2 之間的整數。",
@@ -248,7 +241,6 @@
   "service.directory.updateFailed": "無法更新擴充套件目錄：%1",
   "service.directory.noAnswer": "無響應",
   "service.widget.unavailable": "沒有可用的 Omapop 元件。",
-
   "excluded.add": "從正在執行的視窗新增…",
   "excluded.search": "搜尋視窗或應用…",
   "excluded.noMatches": "沒有匹配的視窗",
@@ -256,15 +248,41 @@
   "excluded.remove": "移除 %1",
   "excluded.none": "未忽略任何應用。",
   "excluded.tooLong": "此列表過長，無法在此編輯。",
-
   "shortcut.pressKeys": "請按鍵…",
   "shortcut.notSet": "未設定",
   "shortcut.badKey": "無法錄製該按鍵。請嘗試其他組合。",
   "shortcut.needModifier": "請將 Ctrl、Alt 或 Super 與普通輸入鍵組合使用。",
   "shortcut.release": "鬆開按鍵以儲存。Esc 取消。",
   "shortcut.press": "按下你的快捷鍵。Esc 取消。",
-
   "popup.back": "返回",
   "popup.copyClose": "複製並關閉",
-  "popup.pasteResult": "貼上結果"
+  "popup.pasteResult": "貼上結果",
+  "ai.pin": "固定",
+  "ai.unpin": "取消固定",
+  "ai.history": "最近的 AI 結果（本次工作階段）",
+  "ai.clearHistory": "清空最近結果",
+  "ai.unsaved": "有未儲存的修改。關閉後會保留草稿，重新啟動 Shell 後遺失。",
+  "ai.keepEditing": "繼續編輯",
+  "ai.discard": "放棄修改並返回",
+  "ai.test.button": "測試連線",
+  "ai.test.note": "使用目前填寫的設定傳送簡短測試，可能產生少量費用。不會儲存設定或傳送選取文字。",
+  "ai.test.running": "正在測試…",
+  "ai.test.success": "連線成功，已收到串流回應。",
+  "ai.test.failed": "測試失敗或逾時，請檢查位址與網路。",
+  "diagnostic.title": "最近一次選詞診斷",
+  "diagnostic.waiting": "請先在應用程式中選取文字，再回到這裡查看。",
+  "diagnostic.engine": "選詞引擎尚未就緒。",
+  "diagnostic.paused": "Omapop 已暫停，請從狀態列圖示恢復。",
+  "diagnostic.super": "按住 Super 會阻止工具列彈出。",
+  "diagnostic.shift": "終端選詞需要從按下滑鼠到放開全程按住 Shift。",
+  "diagnostic.gesture": "單擊不視為選詞，請拖曳選取或雙擊文字。",
+  "diagnostic.excluded": "此應用程式已在設定中排除。",
+  "diagnostic.checking": "正在檢查選取範圍與輔助功能…",
+  "diagnostic.empty": "未讀取到選取文字，或輔助功能回報選取範圍為空。",
+  "diagnostic.stale": "沒有新的選取事件或輔助功能確認，可嘗試設定中的快捷鍵。",
+  "diagnostic.readFailed": "無法讀取選取範圍：可能受保護、過大或暫時無法使用。",
+  "diagnostic.pinned": "AI 結果已固定，請關閉或取消固定以顯示新動作。",
+  "diagnostic.noActions": "沒有已啟用的動作適用於此選取範圍。",
+  "diagnostic.shown": "選取範圍已確認，工具列已顯示。",
+  "diagnostic.hint": "這裡只顯示應用程式識別與狀態，不記錄選取文字。"
 }

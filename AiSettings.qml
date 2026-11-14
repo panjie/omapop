@@ -48,6 +48,13 @@ ColumnLayout {
     }
     property var draft: ({version: 1, defaultConnection: "", connections: [], buttons: []})
     property var keys: ({})
+    property string savedSnapshot: ""
+    property bool confirmBack: false
+    readonly property bool dirty: savedSnapshot !== "" && (JSON.stringify(draft) !== savedSnapshot || Object.keys(keys).length > 0)
+    function requestBack() {
+        if (dirty) confirmBack = true
+        else backRequested()
+    }
     property int connectionIndex: -1
     property int buttonIndex: -1
     readonly property var connection: connectionIndex >= 0 ? draft.connections[connectionIndex] : null
@@ -58,6 +65,8 @@ ColumnLayout {
         if (!ai) return
         draft = JSON.parse(JSON.stringify(ai.config))
         keys = ({})
+        savedSnapshot = JSON.stringify(draft)
+        confirmBack = false
         connectionIndex = draft.connections.length ? 0 : -1
         buttonIndex = draft.buttons.length ? 0 : -1
     }
@@ -105,16 +114,25 @@ ColumnLayout {
     }
     Connections {
         target: root.ai
-        function onConfigChanged() { if (root.visible) root.refresh() }
+        function onConfigChanged() { if (!root.dirty) root.refresh() }
+        function onSaved() { root.refresh() }
     }
-    onVisibleChanged: if (visible) refresh()
+    onVisibleChanged: if (visible && !dirty) refresh()
+    Component.onCompleted: refresh()
+    Keys.onEscapePressed: requestBack()
     RowLayout {
         Layout.fillWidth: true
         spacing: Style.spacing.lg
-        ActionButton { text: strings.t("common.back"); onClicked: root.backRequested() }
+        ActionButton { text: strings.t("common.back"); enabled: !!root.ai && !root.ai.saving; onClicked: root.requestBack() }
         Label { Layout.fillWidth: true; text: strings.t("ai.title"); font.pixelSize: Style.font.heading; font.weight: Font.DemiBold }
     }
         Label { Layout.fillWidth: true; text: strings.t("ai.note"); wrapMode: Text.Wrap; color: root.secondaryText }
+    Label { Layout.fillWidth: true; visible: root.dirty; text: strings.t("ai.unsaved"); color: Commons.Color.urgent }
+    RowLayout {
+        visible: root.confirmBack
+        ActionButton { text: strings.t("ai.keepEditing"); onClicked: root.confirmBack = false }
+        ActionButton { text: strings.t("ai.discard"); onClicked: { root.refresh(); root.backRequested() } }
+    }
     RowLayout {
         id: tabs
         property int currentIndex: 0
@@ -137,6 +155,7 @@ ColumnLayout {
             C.ScrollBar.vertical: C.ScrollBar { }
             ColumnLayout {
                 id: form
+                enabled: !!root.ai && !root.ai.saving
                 width: scroll.width - Style.spacing.lg
                 spacing: Style.spacing.lg
                 ColumnLayout {
@@ -178,6 +197,14 @@ ColumnLayout {
                         Label { text: strings.t("ai.maxTokens") }
                         Ui.NumberField { Layout.fillWidth: true; fieldWidth: width; from: 1; to: 65536; value: root.connection ? root.connection.maxTokens : 4096; onModified: function(next) { root.change("connections", "maxTokens", next) } }
                     }
+                    Label { Layout.fillWidth: true; text: strings.t("ai.test.note") }
+                    ActionButton {
+                        visible: !!root.connection
+                        text: strings.t("ai.test.button")
+                        enabled: !!root.ai && !root.ai.testing
+                        onClicked: root.ai.testConnection(root.connection, root.keys)
+                    }
+                    Label { Layout.fillWidth: true; text: root.ai ? root.ai.testStatus : ""; visible: text !== "" }
                     ActionButton {
                         visible: !!root.connection
                         text: root.connection && root.draft.defaultConnection === root.connection.id ? strings.t("ai.defaultConnection") : strings.t("ai.setDefault")

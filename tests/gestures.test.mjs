@@ -10,7 +10,7 @@ const source = readFileSync(new URL("../Service.qml", import.meta.url), "utf8");
 const actions = vm.createContext({});
 vm.runInContext(readFileSync(new URL("../Actions.js", import.meta.url), "utf8").replace(/^\.pragma library\s*/, ""), actions);
 const wanted = new Set([
-  "onPress", "onRelease", "onSelectionChanged", "scheduleSelectionRead",
+  "diagnoseSelection", "onPress", "onRelease", "onSelectionChanged", "scheduleSelectionRead",
   "takePendingSelection", "cancelSelection", "trigger", "hidePopup",
   "handleEngineEvent", "parseContext", "decodeField",
   "isClickContinuation", "present", "handleClick", "clickModifiers",
@@ -35,7 +35,7 @@ function harness(autoComplete = true) {
   const screen = { name: "test" };
   const popup = vm.createContext({
     screen, shownAt: 0, mode: "buttons", keyboardMode: false,
-    Date: { now: () => now }, Qt: { callLater: fn => fn() },
+    Date: class extends Date { static now() { return now; } }, Qt: { callLater: fn => fn() },
     entrance: { restart() { entrances++; } },
     keyCatcher: { forceActiveFocus() {} }, recomputePrimary() {}, geometryReady() {},
   });
@@ -51,10 +51,10 @@ function harness(autoComplete = true) {
     return event;
   };
   const c = vm.createContext({
-    Date: { now: () => now },
+    Date: class extends Date { static now() { return now; } },
     strings,
     popupContainsPoint() { return false; },
-    aiService: {active: false, cancel() {}, buttons() { return []; }},
+    updateAiResult() {}, aiService: {active: false, cancel() {}, buttons() { return []; }},
     ...pressState, selectionSerial: 0, lastPressSelectionSerial: 0,
     pendingRelease: null, lastReleaseInfo: null, clickCount: 0,
     multiClickInterval: 450, clickSettleInterval: 80, dragThreshold: 6, paused: false,
@@ -943,6 +943,36 @@ test("late dynamic population cannot reopen a dismissed popup", () => {
   complete();
   assert.equal(h.c.popup.visible, false);
   assert.equal(h.presentations.length, 1);
+});
+
+
+
+test('pinned results survive automatic dismissal and block new selection replacement', () => {
+  const h = harness();
+  h.select();
+  h.advance(100);
+  h.c.aiService.active = true;
+  h.c.aiService.pinned = true;
+  h.c.aiService.contextValid = true;
+  const previous = h.c.current;
+  h.c.hidePopup();
+  assert.equal(h.c.current, previous);
+  assert.equal(h.c.aiService.contextValid, false);
+  h.c.present(previous.ctx, {text:'new'}, {}, 'selection', true);
+  assert.equal(h.c.current, previous);
+  assert.equal(h.c.selectionDiagnostic.reason, 'pinned');
+  h.c.hidePopup(true);
+  assert.equal(h.c.current, null);
+});
+
+test('diagnostics survive a plain click used to reopen settings', () => {
+  const h = harness();
+  h.select();
+  h.advance(100);
+  const diagnostic = h.c.selectionDiagnostic;
+  h.advance(1000);
+  h.click();
+  assert.equal(h.c.selectionDiagnostic, diagnostic);
 });
 
 console.log(`${passed} gesture test groups passed`);

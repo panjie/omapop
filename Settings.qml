@@ -156,6 +156,32 @@ ColumnLayout {
             id: form
             width: scroll.width - Style.spacing.lg
             spacing: Style.spacing.huge * 2
+            ColumnLayout {
+                Layout.fillWidth: true
+                spacing: Style.spacing.md
+                Text {
+                    Layout.fillWidth: true
+                    text: strings.t("diagnostic.title")
+                    textFormat: Text.PlainText
+                    color: Commons.Color.popups.text
+                    font.family: Style.font.family
+                    font.pixelSize: Style.font.subtitle
+                }
+                Text {
+                    Layout.fillWidth: true
+                    text: {
+                        var d = root.service ? root.service.selectionDiagnostic : null
+                        return (d && d.app ? d.app + " · " + d.time + "\n" : "")
+                            + strings.t("diagnostic." + (!root.service || !root.service.engineReady ? "engine" : root.service.paused ? "paused" : d ? d.reason : "waiting"))
+                            + "\n" + strings.t("diagnostic.hint")
+                    }
+                    textFormat: Text.PlainText
+                    wrapMode: Text.WordWrap
+                    color: root.secondaryText
+                    font.family: Style.font.family
+                    font.pixelSize: Style.font.bodySmall
+                }
+            }
             Repeater {
                 model: root.groups
                 delegate: ColumnLayout {

@@ -166,6 +166,28 @@ Panel {
             visible: !root.settingsOpen && !root.aiOpen
             spacing: Style.space(6)
 
+            ColumnLayout {
+                Layout.fillWidth: true
+                visible: !!root.service && root.service.ai.history.length > 0
+                Text {
+                    text: strings.t("ai.history")
+                    color: Commons.Color.popups.text
+                    font.family: root.fontFamily
+                    textFormat: Text.PlainText
+                }
+                Repeater {
+                    model: root.service ? root.service.ai.history : []
+                    delegate: Button {
+                        required property int index
+                        required property var modelData
+                        Layout.fillWidth: true
+                        text: modelData.title
+                        onClicked: { root.close(); root.service.ai.restore(index) }
+                    }
+                }
+                Button { text: strings.t("ai.clearHistory"); onClicked: root.service.ai.history = [] }
+            }
+
             RowLayout {
                 Layout.fillWidth: true
                 Layout.bottomMargin: Style.spacing.xs

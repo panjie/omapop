@@ -71,12 +71,23 @@ Item {
         popup.showResult("", false)
         updateAiResult()
     }
+    function restoreAiResult(ctx) {
+        if (!ctx) return
+        var screen = screenForName(ctx.monitor.name)
+        if (!screen) screen = Quickshell.screens.length ? Quickshell.screens[0] : null
+        if (!screen) return
+        current = {ctx: ctx, context: {canReplace: false}, input: {text: ""}}
+        popup.present(screen, Math.round(screen.width / 2), Math.round(screen.height / 3), false, [], false, -1)
+        beginAiResult()
+    }
     function updateAiResult() {
         if (!aiService.active || !popup.visible) return
+        popup.aiPinned = aiService.pinned
+        popup.aiCanRetry = !!aiService.button && aiService.session === current
         popup.aiRunning = aiService.running
         popup.aiStatus = aiService.status
         popup.resultText = aiService.text
-        popup.aiCanReplace = !!current && current.context.canReplace && !aiService.running
+        popup.aiCanReplace = !!current && aiService.session === current && aiService.contextValid && current.context.canReplace && !aiService.running
         rearm.restart()
     }
 
@@ -219,6 +230,11 @@ Item {
     property int lastPressMods: 0
     property real selectionSerial: 0
     property var lastSelectionDecision: null
+    property var selectionDiagnostic: ({app: "", reason: "waiting", time: ""})
+    function diagnoseSelection(ctx, reason) {
+        selectionDiagnostic = {app: ctx && ctx.app ? Actions.sanitizeDisplay(ctx.app.appClass, 128) : "",
+            reason: reason, time: new Date().toLocaleTimeString()}
+    }
     property real lastPressSelectionSerial: 0
     property var pendingRelease: null
     property var lastReleaseInfo: null
@@ -748,6 +764,11 @@ Item {
         if (ctx.wasLongPress && dragged)
             cancelSelection()
         var automaticAllowed = automaticTriggerAllowed(ctx, "selection")
+        if (!ctx.pressInside && (dragged || isClickContinuation(ctx.x, ctx.y, now))) {
+            if (paused) diagnoseSelection(ctx, "paused")
+            else if (((ctx.mods | lastPressMods) & 64) !== 0) diagnoseSelection(ctx, "super")
+            else if (!automaticAllowed) diagnoseSelection(ctx, "shift")
+        }
         // Super suppresses selection, including its contribution to a later
         // multi-click sequence after the modifier has been released.
         if (ctx.pressInside || longPressOnly || paused || ((ctx.mods | lastPressMods) & 64) !== 0
@@ -870,6 +891,7 @@ Item {
 
     function trigger(ctx, kind) {
         cancelSelection()
+        diagnoseSelection(ctx, paused ? "paused" : excludedApps.length && Actions.classMatches(excludedApps, ctx.app.appClass) ? "excluded" : !automaticTriggerAllowed(ctx, kind) ? "shift" : "checking")
         if (paused || (excludedApps.length && Actions.classMatches(excludedApps, ctx.app.appClass))
                 || (kind === "selection" && !isSelectionGesture(ctx))
                 || !automaticTriggerAllowed(ctx, kind)) {
@@ -923,6 +945,7 @@ Item {
                 wasLongPress: ctx.wasLongPress === true
             }
             if (kind === "selection" && (selected === false || (!hasFreshSelection(ctx) && selected !== true))) {
+                diagnoseSelection(ctx, selected === false ? "empty" : "stale")
                 discard()
                 return
             }
@@ -953,6 +976,7 @@ Item {
                 return
             readTask = null
             if (!result.ok) {
+                diagnoseSelection(ctx, "readFailed")
                 discard()
                 if (kind === "longpress" || kind === "shortcut")
                     log("selection read failed: " + (result.stderr || "").slice(0, 200))
@@ -960,16 +984,19 @@ Item {
             }
             var parsed = parseJson(result.stdout, maxSelectionBytes * 3 + 262144)
             if (!parsed || typeof parsed !== "object") {
+                diagnoseSelection(ctx, "readFailed")
                 discard()
                 warn("selection helper returned nothing usable")
                 return
             }
             var text = parsed.ok === true && typeof parsed.text === "string" ? parsed.text : ""
             if (kind === "selection" && text.trim().length === 0) {
+                diagnoseSelection(ctx, parsed.ok === true || parsed.reason === "empty" ? "empty" : "readFailed")
                 discard()
                 return
             }
             if (kind !== "longpress" && parsed.ok !== true && parsed.reason !== "empty") {
+                diagnoseSelection(ctx, "readFailed")
                 discard()
                 return
             }
@@ -1197,6 +1224,12 @@ Item {
     }
 
     function present(ctx, input, context, kind, dynamicReady) {
+        if (aiService.active && aiService.pinned) {
+            diagnoseSelection(ctx, "pinned")
+            aiService.contextValid = false
+            updateAiResult()
+            return
+        }
         if (aiService.active) aiService.cancel(true)
         popup.aiMode = false
         if (!dynamicReady) {
@@ -1226,6 +1259,7 @@ Item {
         if (!buttons.length) {
             if (selectionUpdating)
                 hidePopup()
+            diagnoseSelection(ctx, "noActions")
             log("nothing to show for this selection")
             return
         }
@@ -1251,6 +1285,7 @@ Item {
         var localX = Math.round(ctx.x - ctx.monitor.x)
         var localY = Math.round(ctx.y - ctx.monitor.y)
         var above = positionMode === "above" ? true : positionMode === "below" ? false : !(ctx.dragged && ctx.downward)
+        diagnoseSelection(ctx, "shown")
         popup.present(screen, localX, localY, above, buttons, kind === "shortcut", primary)
         if (initial)
             popup.pushSubmenu(initial.submenu)
@@ -1264,6 +1299,7 @@ Item {
         onButtonClicked: function (button, qtModifiers) { root.handleClick(button, qtModifiers) }
         onResultClicked: root.handleResultClick()
         onResultCopied: root.handleResultCopy()
+        onAiPin: aiService.togglePin()
         onAiCopy: aiService.copy()
         onAiReplace: aiService.replace()
         onAiRetry: aiService.retry()
@@ -1272,7 +1308,7 @@ Item {
         onConfirmRejected: root.handleConfirm(false)
         onBusyCancelled: root.cancelBusy()
         onKeyActivate: function (index) { root.keyboardActivate(index) }
-        onKeyDismiss: root.hidePopup()
+        onKeyDismiss: root.hidePopup(true)
     }
 
     // Give keyboard focus back to the app before acting, so pastes land there.
@@ -1305,7 +1341,12 @@ Item {
         onTriggered: root.armEngine()
     }
 
-    function hidePopup() {
+    function hidePopup(force) {
+        if (aiService.active && aiService.pinned && force !== true) {
+            aiService.contextValid = false
+            updateAiResult()
+            return
+        }
         log("POP_AI_UI_TRACE hide mode=" + popup.mode + " busy=" + busy)
         aiService.cancel(true)
         popup.aiMode = false
@@ -2605,7 +2646,7 @@ Item {
         function show(): string { root.showForCurrentSelection(); return "ok" }
         function settings(): string { return root.openSettings() }
         function aiSettings(): string { return root.openAiSettings() }
-        function hide(): string { root.hidePopup(); return "ok" }
+        function hide(): string { root.hidePopup(true); return "ok" }
         function pause(): string { root.paused = true; return "ok" }
         function resume(): string { root.paused = false; return "ok" }
         function toggle(): string { root.paused = !root.paused; return root.paused ? "paused" : "resumed" }
@@ -2648,7 +2689,7 @@ Item {
         })
     }
 
-    onPausedChanged: if (paused) hidePopup()
+    onPausedChanged: if (paused) hidePopup(true)
 
     // ------------------------------------------------------------ startup
 

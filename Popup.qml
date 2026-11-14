@@ -24,6 +24,9 @@ PanelWindow {
     property string mode: "buttons"
     property string resultText: ""
     property bool resultPreview: false
+    property bool aiPinned: false
+    property bool aiCanRetry: true
+    signal aiPin()
     property bool aiMode: false
     property bool aiRunning: false
     property bool aiCanReplace: false
@@ -441,6 +444,11 @@ PanelWindow {
                             spacing: Style.spacing.xs
                             ActionButton {
                                 visible: win.aiMode
+                                button: ({title: strings.t(win.aiPinned ? "ai.unpin" : "ai.pin"), showAs: "text", textLabel: strings.t(win.aiPinned ? "ai.unpin" : "ai.pin")})
+                                onActivated: win.aiPin()
+                            }
+                            ActionButton {
+                                visible: win.aiMode
                                 button: ({title: strings.t("common.copy"), showAs: "text", textLabel: strings.t("common.copy")})
                                 onActivated: win.aiCopy()
                             }
@@ -450,7 +458,7 @@ PanelWindow {
                                 onActivated: win.aiReplace()
                             }
                             ActionButton {
-                                visible: win.aiMode
+                                visible: win.aiMode && (win.aiRunning || win.aiCanRetry)
                                 button: ({title: win.aiRunning ? strings.t("common.stop") : strings.t("common.regenerate"), showAs: "text", textLabel: win.aiRunning ? strings.t("common.stop") : strings.t("common.retry")})
                                 onActivated: { if (win.aiRunning) win.aiStop(); else win.aiRetry() }
                             }

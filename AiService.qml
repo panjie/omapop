@@ -8,9 +8,15 @@ Item {
     Commons.Translations { id: strings; directory: Qt.resolvedUrl("i18n") }
 
     property var config: ({version: 1, defaultConnection: "", connections: [], buttons: []})
+    signal saved()
     property string error: ""
     property bool saving: false
     property bool running: false
+    property bool pinned: false
+    property var history: []
+    property bool archived: false
+    property bool testing: false
+    property string testStatus: ""
     property bool active: false
     property bool contextValid: true
     property string text: ""
@@ -34,6 +40,7 @@ Item {
             if (result.ok && reply && reply.type === "config") {
                 config = reply.config
                 error = action === "load" ? "" : strings.t("ai.status.saved")
+                if (action !== "load") saved()
             } else error = reply && reply.message ? reply.message : strings.t("ai.status.operationFailed")
         })
     }
@@ -53,13 +60,52 @@ Item {
         if (menu.length) direct.push({id: "ai.menu", title: strings.t("ai.menuButtonTitle"), textLabel: "AI…", showAs: "text", submenu: menu, isFolder: true})
         return direct
     }
+    function testConnection(connection, keys) {
+        if (testing || !connection) return
+        testing = true
+        testStatus = strings.t("ai.test.running")
+        var message = ""
+        var complete = false
+        host.spawn({command: command("test"), stdin: JSON.stringify({connection: connection, keys: keys}),
+            lineMode: true, limit: 65536, deadline: 35000,
+            onLine: function(line) {
+                var event = host.parseJson(line, 65536)
+                if (event && event.type === "done") complete = true
+                if (event && event.type === "error") message = event.message
+            }}, function(result) {
+                testing = false
+                testStatus = result.ok && complete ? strings.t("ai.test.success") : message || strings.t("ai.test.failed")
+            })
+    }
+    function remember() {
+        if (!active || !text || archived) return
+        history = [{text: text, status: status, title: button ? button.title : strings.t("ai.title"),
+            ctx: session ? session.ctx : null}].concat(history).slice(0, 5)
+        archived = true
+    }
+    function restore(index) {
+        var entry = history[index]
+        if (!entry) return
+        cancel(true)
+        text = entry.text
+        status = entry.status
+        button = null
+        session = null
+        contextValid = false
+        active = true
+        archived = true
+        pinned = true
+        host.restoreAiResult(entry.ctx)
+    }
+    function togglePin() { pinned = !pinned; host.updateAiResult() }
     function cancel(close) {
+        if (running && text) status = strings.t("ai.status.stopped")
         generation++
         if (task) task.cancel()
         task = null
         running = false
         host.busy = false
-        if (close) { active = false; session = null }
+        if (close) { remember(); active = false; session = null; pinned = false }
         else { status = strings.t("ai.status.stopped"); host.updateAiResult() }
     }
     function run(action) {
@@ -67,6 +113,7 @@ Item {
         cancel(true)
         session = host.current
         if (!session) return
+        archived = false
         button = JSON.parse(JSON.stringify(action))
         selectionSerial = host.selectionSerial
         active = true
@@ -116,7 +163,14 @@ Item {
             }
         })
     }
-    function retry() { if (button && session === host.current) run(button) }
+    function retry() {
+        if (button && session === host.current) {
+            var keepPinned = pinned
+            run(button)
+            pinned = keepPinned
+            host.updateAiResult()
+        }
+    }
     function copy() {
         if (!text) return
         var token = generation

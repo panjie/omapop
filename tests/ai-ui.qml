@@ -17,7 +17,10 @@ TestCase {
         property var config: ({version: 1, defaultConnection: "", connections: [], buttons: []})
         property string error: ""
         property bool saving: false
+        property bool testing: false
+        property string testStatus: ""
         property var host: ({setExtensionEnabled: function() {}})
+        signal saved()
         function save(config, keys) {}
         function importPopai() {}
     }
@@ -29,6 +32,21 @@ TestCase {
     }
     onCompletedChanged: if (completed) console.log("OMAPOP_AI_TESTS " + JSON.stringify({passed:qtest_results.passCount,failed:qtest_results.failCount}))
     function init() { settings.refresh() }
+    function test_unsaved_draft_survives_close_and_back_requests() {
+        settings.add("connections")
+        settings.change("connections", "name", "Unsaved")
+        verify(settings.dirty)
+        settings.visible = true
+        settings.visible = false
+        settings.visible = true
+        compare(settings.connection.name, "Unsaved")
+        settings.requestBack()
+        verify(settings.confirmBack)
+        settings.refresh()
+        verify(!settings.dirty)
+        verify(!settings.confirmBack)
+        settings.visible = false
+    }
     function test_connections_and_default() {
         settings.add("connections")
         compare(settings.connection.provider, "deepseek")
@@ -78,7 +96,7 @@ TestCase {
         settings.visible = true
         wait(100)
         verify(settings.visible)
-        compare(settings.draft.connections.length, 0) // Opening reloads saved configuration.
+        compare(settings.draft.connections.length, 1) // Opening preserves unsaved edits.
         settings.add("connections")
         settings.add("buttons")
         wait(100)

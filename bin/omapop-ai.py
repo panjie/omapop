@@ -274,11 +274,11 @@ def migrate(directory, config, secrets):
 
 def main():
     parser = argparse.ArgumentParser()
-    parser.add_argument('action', choices=['load', 'save', 'run', 'import'])
+    parser.add_argument('action', choices=['load', 'save', 'run', 'import', 'test'])
     parser.add_argument('--config-dir', type=Path, default=Path.home() / '.config/omapop')
     args = parser.parse_args()
     def timeout(*_):
-        raise ValueError('请求超过 180 秒时限。')
+        raise ValueError('连接测试超过 30 秒时限。' if args.action == 'test' else '请求超过 180 秒时限。')
     signal.signal(signal.SIGALRM, timeout)
     signal.alarm(180)
     try:
@@ -287,11 +287,19 @@ def main():
         secrets = read_json(directory / 'ai-secrets.json', {})
         if not isinstance(secrets, dict):
             raise ValueError('密钥文件无效。')
-        if args.action in ('save', 'run'):
+        if args.action in ('save', 'run', 'test'):
             raw = sys.stdin.buffer.read(LIMIT + 1)
             if len(raw) > LIMIT:
                 raise ValueError('请求过大。')
             request = json.loads(raw)
+        if args.action == 'test':
+            signal.alarm(30)
+            probe = validate({'version': 1, 'defaultConnection': '',
+                              'connections': [request['connection']], 'buttons': []})['connections'][0]
+            key = request.get('keys', {}).get(probe['id']) or secrets.get(probe['id'], '')
+            probe['maxTokens'] = min(probe['maxTokens'], 64)
+            generate(probe, key, 'Reply with OK.')
+            return 0
         if args.action == 'save':
             config = validate(request['config'])
             updates = request.get('keys', {})

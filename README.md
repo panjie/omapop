@@ -95,8 +95,9 @@ reloads its configuration (`hyprctl reload`), or immediately with
   If you start dragging after the hold, releasing the button evaluates the new
   selection normally, including on read-only page text.
 - The bar hides when you click elsewhere, press a key, scroll outside the card, move the pointer
-  away, or switch window or workspace. Hold **Super** while selecting to keep
-  it away.
+  away, or switch window or workspace. AI results can be pinned to keep them
+  visible; a new selection then waits until you unpin or close the result. Hold
+  **Super** while selecting to keep the bar away.
 - **Click the bar icon** to turn extensions on and off, edit their options,
   rescan the extensions folder or open it. Click the **Settings cog** at the top of
   the panel to change Omapop's preferences. **Right-click** pauses and resumes
@@ -126,7 +127,9 @@ does not authorize reusing older text. Omapop waits up to half a second after
 mouse-up for delayed events and rereads if the selection changes during a read.
 
 Open **Omapop's bar icon → Settings** to change selection behavior, search,
-and other preferences. Switches and dropdowns save immediately; text fields
+and other preferences. The Settings page shows the last selection diagnostic
+(application and trigger status only; selected text is not recorded) to explain
+common reasons the bar did not appear. Switches and dropdowns save immediately; text fields
 save on Enter, when you leave the field, or when you close the page. The shell
 saves these preferences in Omapop's entry in `~/.config/omarchy/shell.json`
 and applies them automatically.
@@ -281,8 +284,9 @@ disable its selection actions without removing your providers or prompts.
    output mode. `{{text}}` substitutes the selection literally wherever it
    occurs; otherwise the selection is appended. Click **Save** to apply edits.
 4. Select text and click a button. The bundled actions translate into Chinese
-   and explain text/code. Results stream into a Markdown panel with **Copy**,
-   **Stop / Retry**, **Replace** (editable fields only) and **Close**.
+   and explain text/code. Results stream into a Markdown panel with **Pin**, **Copy**, **Stop / Retry**,
+   **Replace** (editable fields only) and **Close**. Closing a result keeps it
+   in a five item, in-memory recent list under the bar icon.
 
 Preview leaves the clipboard unchanged. Copy mode copies only after successful
 completion. Replacement requires the original active window, unchanged primary
@@ -291,9 +295,14 @@ field. Keyboard input or an outside scroll invalidates replacement. Terminals,
 unknown editability and stale selections fall back to the preview with a manual
 copy instruction. Copying never pastes automatically into another application.
 
-The panel stays open when the pointer moves away. Clicking outside, switching
-windows, closing the panel or starting a new selection cancels the old task;
-late responses are discarded. Stopping or failing retains partial output, marked
+The panel stays open when the pointer moves away. Pin a result to keep it
+visible across clicks, window changes and new selections. New selections are
+ignored while pinned and invalidate replacement of the original selection.
+Unpinned results close on outside clicks or selection changes. Closing a result
+cancels its task, discards late responses and keeps any partial output in the
+recent list. Reopen recent results from the bar icon; restored results can be
+copied, but cannot be retried or replaced. Recent results are held only in
+memory and are cleared when the shell restarts. Stopping or failing retains partial output, marked
 incomplete, without automatically copying or replacing. Retry sends a new
 request and may incur another charge. No automatic retries are performed.
 Requests have a 45-second socket timeout, a 180-second overall deadline and a
@@ -304,11 +313,16 @@ separately in `~/.config/omapop/ai-secrets.json` with mode 0600. This is a priva
 plaintext file, not encrypted storage. Keys are excluded from the public config,
 process arguments and error output. An empty key field preserves an existing
 key. Selection content is sent only when you click an AI action; requests do not
-include clipboard contents or conversation history. No local history is saved.
+include clipboard contents or conversation history. Recent outputs are kept only
+in memory as described above; no history is written to disk.
 
 AI settings open inside Omapop's themed popup, with the same fonts and controls
-as its other settings. Use **返回** to return to general settings; click outside
-the popup to dismiss it. Click **保存** before leaving to keep your changes.
+as its other settings. Unsaved edits remain in the open shell session if you
+dismiss the panel; returning to AI settings restores the draft. Use **返回** to
+return to general settings. If the draft changed, choose **继续编辑** or
+**放弃修改并返回**. Click **保存** to write changes. **Test connection** sends
+a short prompt using the current form values, without saving them or sending
+selected text; the provider may charge for the test.
 
 Protocols: DeepSeek and compatible endpoints use Chat Completions; OpenAI uses
 [Responses streaming](https://developers.openai.com/api/docs/guides/streaming-responses)

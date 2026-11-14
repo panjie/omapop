@@ -18,7 +18,6 @@
   "common.settings": "Settings",
   "common.stop": "Stop",
   "common.update": "Update",
-
   "bar.tooltip.paused": "Omapop is paused",
   "bar.tooltip.ready": "Omapop: select text to act on it",
   "bar.tooltip.waiting": "Omapop: waiting for Hyprland",
@@ -64,7 +63,6 @@
   "bar.reloadTooltip": "Rescan the extensions folder",
   "bar.openFolderTooltip": "Open ~/.config/omapop/extensions",
   "bar.runtimeFooter": "JavaScript extensions run under %1.",
-
   "settings.title": "Omapop settings",
   "settings.backTooltip": "Back to extensions",
   "settings.aiButton": "Configure AI providers and prompts →",
@@ -108,7 +106,6 @@
   "settings.desc.assumeEditable": "Offer editing actions when Omapop cannot tell whether a field accepts text.",
   "settings.desc.terminalClasses": "Window classes separated by commas. These apps paste with Ctrl+Shift+V and cannot cut.",
   "settings.desc.commandKey": "Choose the Linux key used by extensions written for the macOS Command key.",
-
   "option.auto": "Auto",
   "option.above": "Above",
   "option.below": "Below",
@@ -126,7 +123,6 @@
   "option.yandex": "Yandex",
   "option.baidu": "Baidu",
   "option.naver": "Naver",
-
   "ai.title": "AI text actions",
   "ai.note": "Selected text is sent only when you click a button. API usage is billed by the provider.",
   "ai.tab.connections": "Providers & models",
@@ -168,7 +164,6 @@
   "ai.newButton": "New button",
   "ai.newPrompt": "Process the following text:\n\n{{text}}",
   "ai.save": "Save",
-
   "ai.setupButtonTitle": "Configure AI",
   "ai.menuButtonTitle": "AI",
   "ai.status.saved": "Saved.",
@@ -185,7 +180,6 @@
   "ai.status.copyFailed": "Copy failed",
   "ai.status.replaced": "Replaced",
   "ai.status.replaceRejected": "Could not confirm the original selection. Copy the result and paste it manually.",
-
   "action.cut": "Cut",
   "action.copy": "Copy",
   "action.paste": "Paste",
@@ -196,7 +190,6 @@
   "action.install": "Install Extension",
   "action.installNamed": "Install Extension \"%1\"",
   "action.more": "More",
-
   "service.setting.unknown": "Unknown setting.",
   "service.setting.boolean": "Choose on or off.",
   "service.setting.integer": "Enter a whole number between %1 and %2.",
@@ -248,7 +241,6 @@
   "service.directory.updateFailed": "Could not update the catalogue: %1",
   "service.directory.noAnswer": "no answer",
   "service.widget.unavailable": "No Omapop widget is available.",
-
   "excluded.add": "Add from running windows…",
   "excluded.search": "Search windows or apps…",
   "excluded.noMatches": "No matching windows",
@@ -256,15 +248,41 @@
   "excluded.remove": "Remove %1",
   "excluded.none": "No apps ignored.",
   "excluded.tooLong": "This list is too long to edit here.",
-
   "shortcut.pressKeys": "Press keys…",
   "shortcut.notSet": "Not set",
   "shortcut.badKey": "That key cannot be recorded. Try another combination.",
   "shortcut.needModifier": "Include Ctrl, Alt, or Super with a typing key.",
   "shortcut.release": "Release the keys to save. Esc cancels.",
   "shortcut.press": "Press your shortcut. Esc cancels.",
-
   "popup.back": "Back",
   "popup.copyClose": "Copy & close",
-  "popup.pasteResult": "Paste result"
+  "popup.pasteResult": "Paste result",
+  "ai.pin": "Pin",
+  "ai.unpin": "Unpin",
+  "ai.history": "Recent AI results (this session)",
+  "ai.clearHistory": "Clear recent results",
+  "ai.unsaved": "Unsaved changes. Closing keeps this draft until the shell restarts.",
+  "ai.keepEditing": "Keep editing",
+  "ai.discard": "Discard and go back",
+  "ai.test.button": "Test connection",
+  "ai.test.note": "Sends a short test using the current fields; may incur a small charge. Does not save settings or send selected text.",
+  "ai.test.running": "Testing…",
+  "ai.test.success": "Connection succeeded; streamed response received.",
+  "ai.test.failed": "Test failed or timed out. Check the address and network.",
+  "diagnostic.title": "Last selection diagnostic",
+  "diagnostic.waiting": "Select text in an application, then return here.",
+  "diagnostic.engine": "Selection engine is not ready.",
+  "diagnostic.paused": "Omapop is paused. Resume from the bar icon.",
+  "diagnostic.super": "Holding Super suppresses the toolbar.",
+  "diagnostic.shift": "Terminal selections require Shift throughout the gesture.",
+  "diagnostic.gesture": "A single click is not a selection gesture. Drag or double-click text.",
+  "diagnostic.excluded": "This application is excluded in Settings.",
+  "diagnostic.checking": "Checking selection and accessibility…",
+  "diagnostic.empty": "No selected text was found, or accessibility reported an empty selection.",
+  "diagnostic.stale": "No fresh selection event or accessibility confirmation. Try the configured shortcut.",
+  "diagnostic.readFailed": "Could not read the selection; it may be protected, too large, or unavailable.",
+  "diagnostic.pinned": "An AI result is pinned. Close or unpin it to show new actions.",
+  "diagnostic.noActions": "No enabled action matches this selection.",
+  "diagnostic.shown": "Selection confirmed; toolbar shown.",
+  "diagnostic.hint": "Only application identity and status are shown; selected text is not recorded."
 }

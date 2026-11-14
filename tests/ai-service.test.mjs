@@ -13,7 +13,7 @@ function harness() {
     pluginDir: '/plugin', configDir: '/private', selectionHelper: '/selection.py', selectionSerial: 3,
     busy: false, current: {input:{text:'original'}, context:{canReplace:true, terminal:false, windowAddress:'0x123'}, ctx:{}},
     settings: {}, setting(key, fallback) { return this.settings[key] ?? fallback; },
-    parseJson: JSON.parse, beginAiResult(){}, updateAiResult(){},
+    restoreAiResult(){host.current={context:{canReplace:false}}}, parseJson: JSON.parse, beginAiResult(){}, updateAiResult(){},
     spawn(spec, done) {
       const buffer = output.create(spec.limit || 65536, spec.lineMode === true);
       const call = {
@@ -29,7 +29,7 @@ function harness() {
   };
   const c = vm.createContext({host, helper:'/ai.py', config:{version:1,defaultConnection:'ds',connections:[{id:'ds',model:'model'}],buttons:[]},
     strings,
-    error:'',saving:false,running:false,active:false,contextValid:true,text:'',status:'',task:null,generation:0,session:null,button:null,selectionSerial:-1,
+    pinned:false,history:[],archived:false,testing:false,testStatus:'',error:'',saving:false,running:false,active:false,contextValid:true,text:'',status:'',task:null,generation:0,session:null,button:null,selectionSerial:-1,
     flush:{running:false,start(){},stop(){}},settingsWindow:{visible:false}});
   vm.runInContext(argPolyfill,c);
   vm.runInContext(code,c);
@@ -109,4 +109,32 @@ test('AI switch hides setup, toolbar and menu actions and blocks stale actions',
   h.host.settings.aiEnabled = true;
   assert.equal(h.c.buttons({text:'selected'})[0].aiSetup,true);
   assert.equal(h.c.config.buttons.length,2);
+});
+
+test('closed partial results are bounded, restored read-only and never duplicated',()=>{
+  const h=harness();
+  for(let i=0;i<7;i++) {
+    h.c.run(action);delta(h.calls.at(-1),'answer '+i);h.c.cancel(true);
+  }
+  assert.equal(h.c.history.length,5);
+  assert.equal(h.c.history[0].text,'answer 6');
+  assert.equal(h.c.history[0].status,strings.t('ai.status.stopped'));
+  h.c.restore(1);
+  assert(h.c.pinned);assert(!h.c.contextValid);assert.equal(h.c.text,'answer 5');
+  h.c.replace();h.c.retry();assert.deepEqual(h.pasted,[]);
+  h.c.copy();assert.deepEqual(h.copied,['answer 5']);
+  h.c.cancel(true);assert.equal(h.c.history.length,5);
+});
+test('pinned retries keep pin state and cancelled callbacks cannot modify history',()=>{
+  const h=harness();h.c.run(action);const old=h.calls[0];delta(old,'partial');
+  h.c.togglePin();h.c.retry();assert(h.c.pinned);
+  delta(old,'late');done(old);assert.equal(h.c.history[0].text,'partial');assert.equal(h.c.text,'');
+});
+test('connection test sends only draft connection fields, reports errors and prevents overlap',()=>{
+  const h=harness();h.c.testConnection({id:'draft'}, {draft:'key'});h.c.testConnection({id:'second'},{});
+  assert.equal(h.calls.length,1);assert(h.c.testing);
+  const request=JSON.parse(h.calls[0].spec.stdin);
+  assert.deepEqual(request,{connection:{id:'draft'},keys:{draft:'key'}});
+  h.calls[0].chunk('{"type":"error","message":"HTTP 401"}\n');h.calls[0].done({ok:false});
+  assert(!h.c.testing);assert.equal(h.c.testStatus,'HTTP 401');assert.deepEqual(h.copied,[]);
 });

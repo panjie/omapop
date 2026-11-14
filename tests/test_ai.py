@@ -118,6 +118,16 @@ class AiTests(unittest.TestCase):
             events = [json.loads(line) for line in output.getvalue().splitlines()]
             self.assertEqual(events, [{'type': 'delta', 'text': '你好\nworld'}, {'type': 'done'}])
             self.assertEqual(server.payload['messages'][-1]['content'], 'selected')
+            with tempfile.TemporaryDirectory() as tmp:
+                result = subprocess.run(['python3', '-I', str(HELPER), 'test', '--config-dir', tmp],
+                    input=json.dumps({'connection': c, 'keys': {'test': 'DRAFT_KEY'}, 'text': 'PRIVATE_SELECTION'}),
+                    capture_output=True, text=True)
+                self.assertEqual(result.returncode, 0, result.stdout)
+                self.assertEqual(server.payload['messages'][-1]['content'], 'Reply with OK.')
+                self.assertEqual(server.payload['max_tokens'], 64)
+                self.assertNotIn('PRIVATE_SELECTION', json.dumps(server.payload))
+                self.assertNotIn('DRAFT_KEY', result.stdout + result.stderr)
+                self.assertEqual(list(Path(tmp).iterdir()), [])
             Handler.truncated = True
             with contextlib.redirect_stdout(io.StringIO()), self.assertRaises(ValueError): ai.generate(c, '', 'selected')
         finally:
